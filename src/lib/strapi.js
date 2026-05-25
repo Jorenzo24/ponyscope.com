@@ -107,10 +107,11 @@ export function slugifyHeading(text) {
 
 /**
  * Récupère le texte plat d'un noeud Strapi (paragraphe / heading / link / ...).
+ * Exporté pour que BlocksRenderer puisse calculer les mêmes ids que extractHeadings.
  * @param {object} node
  * @returns {string}
  */
-function nodeText(node) {
+export function nodeText(node) {
   if (!node) return '';
   if (typeof node.text === 'string') return node.text;
   if (Array.isArray(node.children)) {

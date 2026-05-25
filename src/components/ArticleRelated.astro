@@ -1,0 +1,175 @@
+---
+// ArticleRelated.astro
+// Encart "articles liés" en sidebar droite : 3 cards minimalistes.
+// Chaque card = mini thumbnail (carré) + catégorie + titre.
+// Style éditorial : pas de bouton "lire plus", juste un lien sur tout le bloc.
+
+import { mediaURL, getArticlePath } from '../lib/strapi.js';
+
+export interface Props {
+  articles: any[];
+  label?: string;
+}
+
+const { articles = [], label = 'À lire ensuite' } = Astro.props;
+const visible = articles.length > 0;
+
+function formatDate(article: any): string {
+  const raw = article?.originalPublishedAt || article?.publishedAt;
+  if (!raw) return '';
+  try {
+    return new Date(raw).toLocaleDateString('fr-FR', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    });
+  } catch {
+    return '';
+  }
+}
+
+// Pour chaque article, on prend la version `small` du cover si dispo
+// (suffisant pour un thumbnail 96px).
+function thumbURL(article: any): string | undefined {
+  const cover = article?.cover;
+  if (!cover) return undefined;
+  const small = cover.formats?.small?.url || cover.formats?.thumbnail?.url;
+  return mediaURL(small || cover.url);
+}
+---
+
+{visible && (
+  <section class="related" aria-label={label}>
+    <div class="related-label">{label}</div>
+
+    <ol class="related-list">
+      {articles.map((article) => (
+        <li class="related-item">
+          <a class="related-card" href={getArticlePath(article)}>
+            {thumbURL(article) ? (
+              <img
+                class="related-thumb"
+                src={thumbURL(article)}
+                alt={article?.cover?.alternativeText || article?.title || ''}
+                loading="lazy"
+              />
+            ) : (
+              <div class="related-thumb related-thumb--empty" aria-hidden="true"></div>
+            )}
+            <div class="related-meta">
+              {article?.primaryCategory?.name && (
+                <span class="related-cat">{article.primaryCategory.name}</span>
+              )}
+              <h3 class="related-title" set:html={article.title || ''}></h3>
+              {formatDate(article) && (
+                <time class="related-date">{formatDate(article)}</time>
+              )}
+            </div>
+          </a>
+        </li>
+      ))}
+    </ol>
+  </section>
+)}
+
+<style>
+  .related {
+    margin-top: 50px;
+    padding-top: 18px;
+    border-top: 1px solid var(--line);
+  }
+
+  .related-label {
+    font-family: var(--font-sans);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.32em;
+    color: var(--gold-deep);
+    font-weight: 600;
+    margin-bottom: 24px;
+  }
+
+  .related-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+  }
+
+  .related-item {
+    margin: 0;
+    padding: 0;
+  }
+
+  .related-card {
+    display: flex;
+    gap: 14px;
+    text-decoration: none;
+    color: inherit;
+    border-bottom: none;
+    transition: transform 0.2s;
+  }
+  .related-card:hover .related-title {
+    color: var(--gold-deep);
+  }
+  .related-card:hover .related-thumb {
+    transform: scale(1.02);
+  }
+
+  .related-thumb {
+    flex: 0 0 88px;
+    width: 88px;
+    height: 88px;
+    object-fit: cover;
+    background: var(--ivory-warm);
+    transition: transform 0.4s ease;
+  }
+  .related-thumb--empty {
+    background:
+      linear-gradient(135deg, var(--ivory-warm), var(--ivory));
+  }
+
+  .related-meta {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .related-cat {
+    font-family: var(--font-sans);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.28em;
+    color: var(--gold-deep);
+    font-weight: 600;
+  }
+
+  .related-title {
+    font-family: var(--font-serif);
+    font-weight: 400;
+    font-size: 17px;
+    line-height: 1.25;
+    color: var(--navy);
+    letter-spacing: -0.005em;
+    margin: 0;
+    transition: color 0.18s;
+    /* clamp à 3 lignes pour garder une grille propre */
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .related-title :global(em) { font-style: italic; }
+
+  .related-date {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 12px;
+    color: var(--ink-soft);
+    letter-spacing: 0.01em;
+  }
+</style>

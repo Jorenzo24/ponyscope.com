@@ -3,7 +3,13 @@
 // Template universel pour les articles Ponyscope.
 // Au build, génère UNE page statique par article, à l'URL exacte du canonicalURL Strapi.
 
-import { getAllArticles, getArticlePath, mediaURL } from '../lib/strapi.js';
+import {
+  getAllArticles,
+  getArticlePath,
+  mediaURL,
+  extractHeadings,
+  getRelatedArticles,
+} from '../lib/strapi.js';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Nav from '../components/Nav.astro';
 import Footer from '../components/Footer.astro';
@@ -21,16 +27,19 @@ export async function getStaticPaths() {
       // Astro veut "path" sans le slash de tête pour [...path]
       const path = fullPath.replace(/^\/+/, '');
 
+      // Articles liés calculés au build (même primaryCategory, exclu lui-même)
+      const related = getRelatedArticles(article, articles, 3);
+
       return {
         params: { path },
-        props: { article },
+        props: { article, related },
       };
     })
     .filter((entry) => entry.params.path); // exclut les chemins vides
 }
 
 // ----- Données de la page -----
-const { article } = Astro.props;
+const { article, related } = Astro.props;
 
 // SEO
 const metaTitle = article.seo?.metaTitle || article.title;
@@ -59,8 +68,23 @@ const coverURL = article.cover?.url ? mediaURL(article.cover.url) : undefined;
 const coverAlt = article.cover?.alternativeText || article.title || '';
 const coverCaption = article.cover?.caption || undefined;
 
-// Auteur
+// Headings du contenu (pour le TOC sidebar gauche)
+const headings = extractHeadings(article.content || []);
+
+// Auteur (nom + rôle + bio + avatar résolu)
 const authorName = article.author?.name;
+const authorBio = article.author?.bio || undefined;
+const authorAvatarURL = article.author?.avatar?.url
+  ? mediaURL(article.author.avatar.url)
+  : undefined;
+const authorData = authorName
+  ? {
+      name: authorName,
+      role: 'Rédacteur',
+      bio: authorBio,
+      avatarURL: authorAvatarURL,
+    }
+  : undefined;
 ---
 
 <BaseLayout
@@ -85,6 +109,9 @@ const authorName = article.author?.name;
     cover={coverURL}
     coverAlt={coverAlt}
     coverCaption={coverCaption}
+    headings={headings}
+    author={authorData}
+    related={related}
   >
     <BlocksRenderer blocks={article.content || []} />
   </ArticleBody>

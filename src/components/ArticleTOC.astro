@@ -1,0 +1,193 @@
+---
+// ArticleTOC.astro
+// Sommaire latéral gauche, sticky pendant le scroll.
+// - Liste les headings h2 (et h3 indentés) du contenu.
+// - Met en surbrillance la section en cours de lecture.
+// - Click → smooth scroll vers la section.
+// - Caché si moins de 2 entrées (pas pertinent pour des articles courts).
+
+export interface Props {
+  headings: Array<{ level: number; text: string; id: string }>;
+  label?: string;
+}
+
+const { headings = [], label = 'Sommaire' } = Astro.props;
+const visible = headings.length >= 2;
+---
+
+{visible && (
+  <nav class="toc" aria-label={label}>
+    <div class="toc-label">{label}</div>
+    <ol class="toc-list">
+      {headings.map((h) => (
+        <li class={`toc-item toc-level-${h.level}`}>
+          <a class="toc-link" href={`#${h.id}`} data-target={h.id}>
+            <span class="toc-bullet"></span>
+            <span class="toc-text">{h.text}</span>
+          </a>
+        </li>
+      ))}
+    </ol>
+  </nav>
+)}
+
+<style>
+  .toc {
+    position: sticky;
+    top: 100px;
+    align-self: start;
+    max-height: calc(100vh - 140px);
+    overflow-y: auto;
+    padding-right: 8px;
+    /* Scrollbar discrète */
+    scrollbar-width: thin;
+    scrollbar-color: var(--gold-soft) transparent;
+  }
+  .toc::-webkit-scrollbar { width: 4px; }
+  .toc::-webkit-scrollbar-thumb {
+    background: var(--gold-soft);
+    border-radius: 2px;
+  }
+
+  .toc-label {
+    font-family: var(--font-sans);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.32em;
+    color: var(--gold-deep);
+    font-weight: 600;
+    margin-bottom: 24px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .toc-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .toc-item {
+    margin: 0;
+    padding: 0;
+  }
+
+  .toc-link {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 10px 0;
+    color: var(--ink-soft);
+    text-decoration: none;
+    font-family: var(--font-serif);
+    font-size: 14px;
+    line-height: 1.4;
+    transition: color 0.18s ease;
+    cursor: pointer;
+    letter-spacing: 0.005em;
+  }
+  .toc-link:hover {
+    color: var(--navy);
+  }
+
+  .toc-bullet {
+    flex: 0 0 1px;
+    width: 1px;
+    height: 14px;
+    background: var(--line-strong);
+    margin-top: 5px;
+    transition: background 0.2s ease, transform 0.2s ease;
+  }
+  .toc-link:hover .toc-bullet {
+    background: var(--gold);
+  }
+
+  .toc-text {
+    flex: 1;
+  }
+
+  /* Indentation pour h3 */
+  .toc-level-3 .toc-link {
+    padding-left: 22px;
+    font-size: 13px;
+    color: var(--ink-soft);
+    opacity: 0.85;
+  }
+  .toc-level-3 .toc-bullet {
+    height: 10px;
+  }
+
+  /* État actif (mis à jour par le script ci-dessous) */
+  .toc-link.is-active {
+    color: var(--navy);
+    font-weight: 500;
+  }
+  .toc-link.is-active .toc-bullet {
+    background: var(--gold);
+    width: 2px;
+    height: 22px;
+    margin-left: -1px;
+  }
+
+  @media (max-width: 1100px) {
+    .toc { display: none; }
+  }
+</style>
+
+<script>
+  // Scroll spy : on observe les headings, on highlight le lien du TOC correspondant
+  // au heading le plus haut visible dans le viewport.
+  (function () {
+    const links = Array.from(
+      document.querySelectorAll<HTMLAnchorElement>('.toc-link[data-target]')
+    );
+    if (links.length === 0) return;
+
+    const targets = links
+      .map((link) => {
+        const id = link.getAttribute('data-target') || '';
+        const el = document.getElementById(id);
+        return el ? { id, link, el } : null;
+      })
+      .filter((x): x is { id: string; link: HTMLAnchorElement; el: HTMLElement } => x !== null);
+
+    if (targets.length === 0) return;
+
+    let currentId: string | null = null;
+    const setActive = (id: string | null) => {
+      if (id === currentId) return;
+      currentId = id;
+      for (const t of targets) {
+        t.link.classList.toggle('is-active', t.id === id);
+      }
+    };
+
+    const updateActive = () => {
+      // On choisit le heading dont le top a passé une marge de 30% de viewport.
+      const offset = window.innerHeight * 0.3;
+      let activeId: string | null = null;
+      for (const t of targets) {
+        const rect = t.el.getBoundingClientRect();
+        if (rect.top - offset <= 0) {
+          activeId = t.id;
+        } else {
+          break;
+        }
+      }
+      setActive(activeId);
+    };
+
+    let rafScheduled = false;
+    const onScroll = () => {
+      if (rafScheduled) return;
+      rafScheduled = true;
+      requestAnimationFrame(() => {
+        rafScheduled = false;
+        updateActive();
+      });
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll, { passive: true });
+    updateActive();
+  })();
+</script>

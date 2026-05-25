@@ -1,0 +1,145 @@
+---
+// ArticleAuthor.astro
+// Encart auteur en sidebar droite : avatar + nom + rôle + bio courte.
+// Style éditorial : sur fond ivoire, séparé par un filet gold en haut.
+//
+// L'avatarURL doit être déjà absolu (résolu par le parent via mediaURL).
+
+export interface Props {
+  name?: string;
+  role?: string;
+  bio?: string;
+  avatarURL?: string;
+  href?: string;          // lien vers la page auteur (optionnel)
+}
+
+const {
+  name,
+  role = 'Rédacteur',
+  bio,
+  avatarURL,
+  href,
+} = Astro.props;
+
+const visible = Boolean(name);
+
+// Initiales pour le fallback si pas d'avatar
+const initials = (name || '')
+  .split(/\s+/)
+  .filter(Boolean)
+  .slice(0, 2)
+  .map((s) => s[0]?.toUpperCase() || '')
+  .join('');
+---
+
+{visible && (
+  <aside class="author-card" aria-label={`À propos de ${name}`}>
+    <div class="author-label">À propos</div>
+
+    <div class="author-head">
+      {avatarURL ? (
+        <img
+          class="author-avatar"
+          src={avatarURL}
+          alt={name}
+          loading="lazy"
+        />
+      ) : (
+        <div class="author-avatar author-avatar--placeholder" aria-hidden="true">
+          {initials}
+        </div>
+      )}
+
+      <div class="author-meta">
+        {href ? (
+          <a class="author-name" href={href}>{name}</a>
+        ) : (
+          <span class="author-name">{name}</span>
+        )}
+        {role && <span class="author-role">{role}</span>}
+      </div>
+    </div>
+
+    {bio && <p class="author-bio" set:html={bio}></p>}
+  </aside>
+)}
+
+<style>
+  .author-card {
+    padding-top: 18px;
+    border-top: 1px solid var(--line);
+  }
+
+  .author-label {
+    font-family: var(--font-sans);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.32em;
+    color: var(--gold-deep);
+    font-weight: 600;
+    margin-bottom: 22px;
+  }
+
+  .author-head {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 18px;
+  }
+
+  .author-avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: var(--ivory-warm);
+    flex: 0 0 56px;
+  }
+  .author-avatar--placeholder {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 22px;
+    color: var(--gold-deep);
+    border: 1px solid var(--gold-soft);
+  }
+
+  .author-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+  .author-name {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 20px;
+    line-height: 1.2;
+    color: var(--navy);
+    text-decoration: none;
+    border-bottom: none;
+  }
+  a.author-name { transition: color 0.2s; }
+  a.author-name:hover { color: var(--gold-deep); }
+
+  .author-role {
+    font-family: var(--font-sans);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.28em;
+    color: var(--ink-soft);
+    font-weight: 500;
+  }
+
+  .author-bio {
+    font-family: var(--font-serif);
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--ink-mid);
+    margin: 0;
+    font-style: italic;
+    letter-spacing: 0.005em;
+  }
+</style>
