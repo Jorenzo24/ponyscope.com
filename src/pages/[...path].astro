@@ -12,6 +12,7 @@ import {
   stripDuplicateLeadingParagraph,
   getCategoryTree,
   prettyCategoryName,
+  getArticleBreadcrumb,
 } from '../lib/strapi.js';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Nav from '../components/Nav.astro';
@@ -105,6 +106,7 @@ const { kind } = Astro.props;
       : undefined;
 
     const categoryName = article.primaryCategory?.name;
+    const breadcrumb = getArticleBreadcrumb(article);
 
     // Image de cover
     const coverURL = article.cover?.url ? mediaURL(article.cover.url) : undefined;
@@ -149,6 +151,7 @@ const { kind } = Astro.props;
           title={article.title}
           category={categoryName}
           date={publishedDate}
+          breadcrumb={breadcrumb}
         />
 
         <ArticleBody

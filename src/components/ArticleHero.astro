@@ -15,6 +15,7 @@ export interface Props {
   category?: string;       // Ex: "Blog", "Tops", "Tutos"
   date?: string;           // Ex: "21 novembre 2010"
   readingTime?: number;    // optionnel : minutes (ex: 7)
+  breadcrumb?: Array<{ label: string; path: string }>;
 }
 
 const {
@@ -22,6 +23,7 @@ const {
   category,
   date,
   readingTime,
+  breadcrumb = [],
 } = Astro.props;
 ---
 
@@ -29,6 +31,18 @@ const {
   <div class="hero-veil"></div>
 
   <div class="hero-content">
+    {breadcrumb.length > 0 && (
+      <nav class="hero-crumbs" aria-label="Fil d'ariane">
+        <a href="/">Accueil</a>
+        {breadcrumb.map((c) => (
+          <>
+            <span class="crumb-sep">·</span>
+            <a href={c.path}>{c.label}</a>
+          </>
+        ))}
+      </nav>
+    )}
+
     {(category || date || readingTime) && (
       <div class="hero-eyebrow">
         {category && <span class="eyebrow-item category">{category}</span>}
@@ -102,6 +116,29 @@ const {
     flex-direction: column;
     align-items: center;
   }
+
+  /* === Fil d'ariane au top du hero === */
+  .hero-crumbs {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 28px;
+    font-family: var(--font-sans);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.32em;
+    color: rgba(250, 246, 238, 0.55);
+  }
+  .hero-crumbs a {
+    color: rgba(250, 246, 238, 0.75);
+    text-decoration: none;
+    border-bottom: none;
+    transition: color 0.2s;
+  }
+  .hero-crumbs a:hover { color: var(--gold-soft); }
+  .hero-crumbs .crumb-sep { color: var(--gold); opacity: 0.6; }
 
   /* === Eyebrow : catégorie · date · lecture === */
   .hero-eyebrow {

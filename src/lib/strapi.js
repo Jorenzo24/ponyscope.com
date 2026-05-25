@@ -155,6 +155,34 @@ export function extractHeadings(blocks) {
 }
 
 /**
+ * Construit le fil d'ariane (breadcrumb) d'un article à partir de son
+ * canonicalURL. Le dernier segment (= slug de l'article) est retiré.
+ *
+ * Ex : /blog/tops-cheval/top-10-foo → [
+ *   { label: "Blog", path: "/blog" },
+ *   { label: "Tops Cheval", path: "/blog/tops-cheval" }
+ * ]
+ *
+ * @param {object} article
+ * @returns {Array<{label:string, path:string}>}
+ */
+export function getArticleBreadcrumb(article) {
+  const url = article?.seo?.canonicalURL;
+  if (!url) return [];
+  try {
+    const u = new URL(url);
+    const segs = u.pathname.replace(/^\/+|\/+$/g, '').split('/').filter(Boolean);
+    if (segs.length < 2) return [];
+    return segs.slice(0, -1).map((seg, i) => ({
+      label: prettyCategoryName(seg),
+      path: '/' + segs.slice(0, i + 1).join('/'),
+    }));
+  } catch {
+    return [];
+  }
+}
+
+/**
  * Construit l'arbre des catégories à partir des canonicalURLs des articles.
  * Les ancêtres d'un article (chaque segment de l'URL sauf le dernier) sont
  * considérés comme des catégories qui contiennent cet article.
