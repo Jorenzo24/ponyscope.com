@@ -9,31 +9,26 @@
  * (C et G capitalisés). Ça préserve volontairement les occurrences en minuscule
  * "contre galop", qui désignent l'allure équestre, pas la marque.
  *
- * Usage :
- *   STRAPI_TOKEN=xxx node scripts/fix-brand-replace.js            # dry-run (par défaut, ne modifie rien)
- *   STRAPI_TOKEN=xxx node scripts/fix-brand-replace.js --apply    # exécute pour de vrai
+ * Usage (utilise le token persistant dans .env, gitignored) :
+ *   node --env-file=.env scripts/fix-brand-replace.js            # dry-run
+ *   node --env-file=.env scripts/fix-brand-replace.js --apply    # exécute
  *
- * Le token doit être créé dans Strapi admin :
- *   Settings → API Tokens → Create new API token
- *     Name        : fix-brand-replace
- *     Token type  : Full access
- *     Duration    : 1 day  (à supprimer après usage)
- *
- * Le script ne lit/écrit JAMAIS le token sur disque. Il vient uniquement de
- * la var d'env STRAPI_TOKEN passée au moment du run.
+ * Le `.env` à la racine doit contenir :
+ *   STRAPI_ADMIN_TOKEN=...   (token Strapi Full access, créé dans l'admin)
  */
 
-const STRAPI_URL = process.env.STRAPI_URL || 'https://cms.ponyscope.com';
-const STRAPI_TOKEN = process.env.STRAPI_TOKEN;
+const STRAPI_URL =
+  process.env.PUBLIC_STRAPI_URL || process.env.STRAPI_URL || 'https://cms.ponyscope.com';
+const STRAPI_TOKEN = process.env.STRAPI_ADMIN_TOKEN || process.env.STRAPI_TOKEN;
 const APPLY = process.argv.includes('--apply');
 
 const FROM_REGEX = /Contre Galop/g;
 const TO = 'Ponyscope';
 
 if (!STRAPI_TOKEN) {
-  console.error('✗ Manque la variable d\'env STRAPI_TOKEN.');
-  console.error('  Génère un token Strapi admin → Settings → API Tokens (Full access, 1 day).');
-  console.error('  Puis :  STRAPI_TOKEN=xxx node scripts/fix-brand-replace.js');
+  console.error('✗ Manque la variable d\'env STRAPI_ADMIN_TOKEN.');
+  console.error('  Ajoute-la dans .env à la racine du projet, puis :');
+  console.error('  node --env-file=.env scripts/fix-brand-replace.js');
   process.exit(1);
 }
 
@@ -58,10 +53,12 @@ async function fetchAllArticles() {
   let page = 1;
   const pageSize = 100;
   while (true) {
+    // On populate TOUT le seo (avec metaImage en id seulement) pour pouvoir
+    // le ré-envoyer en entier au PUT sans perdre les autres champs.
     const data = await api(
       '/api/articles?' +
         'fields[0]=title&fields[1]=excerpt&fields[2]=slug&' +
-        'populate[seo][fields][0]=metaTitle&' +
+        'populate[seo][populate][metaImage][fields][0]=id&' +
         `pagination[page]=${page}&pagination[pageSize]=${pageSize}`
     );
     all.push(...(data.data || []));
@@ -81,12 +78,20 @@ function detectChanges(article) {
   if (article.excerpt && FROM_REGEX.test(article.excerpt)) {
     changes.excerpt = article.excerpt.replace(FROM_REGEX, TO);
   }
-  const meta = article.seo?.metaTitle;
-  if (meta && FROM_REGEX.test(meta)) {
-    // Update partiel d'un component Strapi : on passe id + nouvelle valeur
+  const seo = article.seo;
+  if (seo?.metaTitle && FROM_REGEX.test(seo.metaTitle)) {
+    // Strapi 5 : pour update un component, on envoie l'objet COMPLET sans son id
+    // (l'id des components diffère entre draft et published, donc le passer
+    // provoque "Some of the provided components in seo are not related to the
+    // entity"). Strapi remplace alors le component existant par notre objet.
+    // Pour metaImage (relation media), on n'envoie que l'id (sinon Strapi
+    // rejette le payload).
     changes.seo = {
-      id: article.seo.id,
-      metaTitle: meta.replace(FROM_REGEX, TO),
+      metaTitle: seo.metaTitle.replace(FROM_REGEX, TO),
+      metaDescription: seo.metaDescription ?? undefined,
+      metaRobots: seo.metaRobots ?? undefined,
+      canonicalURL: seo.canonicalURL ?? undefined,
+      metaImage: seo.metaImage?.id ?? null,
     };
   }
 
@@ -156,8 +161,8 @@ async function main() {
   }
 
   console.log(`\n✅ Terminé. ${done} updates OK, ${failed} échecs.`);
-  console.log('\n⚠️  N\'oublie pas de SUPPRIMER le token Strapi maintenant :');
-  console.log('   Strapi admin → Settings → API Tokens → fix-brand-replace → Delete');
+  console.log('\nLe token reste dans .env pour les futurs scripts.');
+  console.log('À supprimer manuellement dans Strapi admin si tu veux le révoquer.');
 }
 
 main().catch((e) => {
