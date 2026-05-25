@@ -210,6 +210,8 @@ const {
     display: block;
     margin: 0 auto;
     box-shadow: 0 30px 60px -30px rgba(16, 20, 47, 0.35);
+    /* Traitement éditorial unifié sur toutes les covers Strapi */
+    filter: saturate(0.9) sepia(0.06) contrast(1.03);
   }
   .article-cover figcaption {
     font-family: var(--font-serif);
@@ -235,18 +237,38 @@ const {
     font-size: 36px;
     line-height: 1.18;
     letter-spacing: -0.018em;
-    margin: 70px 0 24px;
+    /* margin-top à 0 : c'est le .h2-divider qui apporte la respiration */
+    margin: 26px 0 24px;
     color: var(--navy);
     scroll-margin-top: 100px;
   }
   .article-content :global(h2 em) { font-style: italic; }
-  .article-content :global(h2)::before {
+
+  /* === Ornement de transition entre h2 ===
+     Filet or à gauche · fer à cheval centré · filet or à droite.
+     Émis par BlocksRenderer juste avant chaque h2. */
+  .article-content :global(.h2-divider) {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin: 72px 0 0;
+  }
+  .article-content :global(.h2-divider)::before,
+  .article-content :global(.h2-divider)::after {
     content: '';
-    display: block;
-    width: 40px;
+    flex: 1;
     height: 1px;
     background: var(--gold);
-    margin-bottom: 24px;
+    opacity: 0.6;
+  }
+  .article-content :global(.h2-divider-mark) {
+    flex-shrink: 0;
+    width: 28px;
+    height: 18px;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 18' fill='none' stroke='%23BF9B66' stroke-width='1.4' stroke-linecap='round'><path d='M 5 3 C 5 12.5, 9 15, 14 15 C 19 15, 23 12.5, 23 3'/><circle cx='5' cy='3' r='1.4' fill='%23BF9B66' stroke='none'/><circle cx='23' cy='3' r='1.4' fill='%23BF9B66' stroke='none'/></svg>");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
   }
 
   .article-content :global(h3) {
@@ -307,6 +329,7 @@ const {
     height: auto;
     display: block;
     margin: 44px auto;
+    filter: saturate(0.9) sepia(0.06) contrast(1.03);
   }
   .article-content :global(figure) {
     margin: 56px 0;

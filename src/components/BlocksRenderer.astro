@@ -99,7 +99,11 @@ function renderBlock(block: any): string {
         idAttr = ' id="' + id + '"';
       }
     }
-    return '<h' + level + idAttr + '>' + renderInline(block.children || []) + '</h' + level + '>';
+    // Avant chaque h2 : un séparateur orné (deux filets or + fer à cheval)
+    const divider = level === 2
+      ? '<div class="h2-divider" aria-hidden="true"><span class="h2-divider-mark"></span></div>'
+      : '';
+    return divider + '<h' + level + idAttr + '>' + renderInline(block.children || []) + '</h' + level + '>';
   }
 
   if (block.type === 'image' && block.image) {
