@@ -1,0 +1,114 @@
+---
+// BaseLayout.astro
+// Squelette HTML global pour toutes les pages Ponyscope.
+// Charge les fonts, définit le design system, place la progress bar,
+// et expose 3 slots : nav (par défaut), default (contenu), footer.
+
+export interface Props {
+  title: string;
+  description?: string;
+  canonicalURL?: string;
+  noindex?: boolean;
+  ogImage?: string;
+}
+
+const {
+  title,
+  description = "Ponyscope — Le média des cavaliers curieux.",
+  canonicalURL,
+  noindex = true,
+  ogImage,
+} = Astro.props;
+---
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{title}</title>
+<meta name="description" content={description}>
+{noindex && <meta name="robots" content="noindex, nofollow">}
+{canonicalURL && <link rel="canonical" href={canonicalURL}>}
+
+<!-- Open Graph -->
+<meta property="og:title" content={title}>
+<meta property="og:description" content={description}>
+<meta property="og:type" content="article">
+{canonicalURL && <meta property="og:url" content={canonicalURL}>}
+{ogImage && <meta property="og:image" content={ogImage}>}
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<style is:global>
+  :root {
+    --navy: #10142F;
+    --navy-soft: #1d2348;
+    --navy-deep: #080a1f;
+    --gold: #BF9B66;
+    --gold-soft: #d4b988;
+    --gold-deep: #8a6f44;
+    --ivory: #FAF6EE;
+    --ivory-warm: #F3ECDD;
+    --paper: #FFFCF6;
+    --ink: #10142F;
+    --ink-mid: #3a3f5a;
+    --ink-soft: #6a6f88;
+    --line: rgba(16, 20, 47, 0.12);
+    --line-strong: rgba(16, 20, 47, 0.25);
+
+    --font-serif: 'Cormorant Garamond', 'Times New Roman', serif;
+    --font-sans: 'Inter', -apple-system, sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: 16px;
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+    font-weight: 400;
+  }
+
+  /* === READING PROGRESS === */
+  .progress {
+    position: fixed;
+    top: 0; left: 0;
+    height: 2px;
+    width: 0%;
+    background: var(--gold);
+    z-index: 999;
+    transition: width 0.1s ease-out;
+  }
+</style>
+</head>
+<body>
+
+<div class="progress" id="progress"></div>
+
+<slot name="nav" />
+
+<slot />
+
+<slot name="footer" />
+
+<script>
+  // Reading progress bar — suit le scroll de la page
+  window.addEventListener('scroll', () => {
+    const h = document.documentElement;
+    const scrolled = (h.scrollTop / (h.scrollHeight - h.clientHeight)) * 100;
+    const bar = document.getElementById('progress');
+    if (bar) bar.style.width = scrolled + '%';
+  });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,147 @@
+---
+// Footer.astro
+// Footer navy plein écran : brand + 3 colonnes de liens + footer-bottom
+---
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <span class="logo-mark">
+          <span class="logo-icon">P</span>
+          <span class="logo">Ponyscope</span>
+        </span>
+        <p>Le média des cavaliers curieux. Notre regard sur le cheval, sans poussière.</p>
+      </div>
+      <div class="footer-col">
+        <h5>— Lire</h5>
+        <ul>
+          <li><a href="/blog">Tous les articles</a></li>
+          <li><a href="/tops">Tops</a></li>
+          <li><a href="/tutos">Tutos</a></li>
+          <li><a href="/random">Au hasard</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h5>— Apprendre</h5>
+        <ul>
+          <li><a href="/guides-galops">Guides Galops</a></li>
+          <li><a href="/metiers">Métiers équestres</a></li>
+          <li><a href="/ethologie">Éthologie</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h5>— La maison</h5>
+        <ul>
+          <li><a href="/newsletter">Newsletter</a></li>
+          <li><a href="/contact">Contact</a></li>
+          <li><a href="/mentions-legales">Mentions légales</a></li>
+          <li><a href="/confidentialite">Confidentialité</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div>© 2026 — Ponyscope</div>
+      <div>Édité avec passion en Dordogne</div>
+    </div>
+  </div>
+</footer>
+
+<style>
+  footer {
+    background: var(--navy);
+    color: var(--paper);
+    padding: 100px 48px 40px;
+  }
+  .footer-inner {
+    max-width: 1480px;
+    margin: 0 auto;
+  }
+  .footer-top {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    gap: 80px;
+    margin-bottom: 80px;
+    padding-bottom: 60px;
+    border-bottom: 1px solid rgba(191, 155, 102, 0.2);
+  }
+  .footer-brand .logo-mark {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+  .footer-brand .logo-icon {
+    width: 32px;
+    height: 32px;
+    background: var(--gold);
+    color: var(--navy);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-weight: 600;
+    font-size: 22px;
+    line-height: 1;
+  }
+  .footer-brand .logo {
+    font-family: var(--font-serif);
+    font-weight: 500;
+    font-size: 32px;
+    color: var(--paper);
+    letter-spacing: -0.01em;
+  }
+  .footer-brand p {
+    color: rgba(250, 246, 238, 0.6);
+    font-size: 15px;
+    line-height: 1.7;
+    max-width: 360px;
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-weight: 300;
+  }
+  .footer-col h5 {
+    font-family: var(--font-sans);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.25em;
+    color: var(--gold);
+    margin-bottom: 28px;
+    font-weight: 500;
+  }
+  .footer-col ul { list-style: none; }
+  .footer-col li { margin-bottom: 14px; }
+  .footer-col a {
+    color: rgba(250, 246, 238, 0.7);
+    text-decoration: none;
+    font-size: 14px;
+    transition: color 0.2s;
+  }
+  .footer-col a:hover { color: var(--gold-soft); }
+  .footer-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    color: rgba(250, 246, 238, 0.4);
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+  }
+
+  @media (max-width: 768px) {
+    footer { padding: 60px 24px 32px; }
+    .footer-top {
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+    }
+    .footer-brand { grid-column: 1 / -1; }
+    .footer-brand .logo { font-size: 26px; }
+    .footer-bottom {
+      flex-direction: column;
+      gap: 16px;
+      text-align: center;
+    }
+  }
+</style>
