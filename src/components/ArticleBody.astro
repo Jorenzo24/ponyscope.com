@@ -210,7 +210,10 @@ const {
     display: block;
     margin: 0 auto;
     border-radius: 6px;
-    box-shadow: 0 30px 60px -30px rgba(16, 20, 47, 0.35);
+    /* Ombre stratifiée, plus marquée que les images inline (la cover est l'image héro) */
+    box-shadow:
+      0 6px 16px -6px rgba(16, 20, 47, 0.20),
+      0 32px 72px -22px rgba(16, 20, 47, 0.50);
     /* Traitement éditorial unifié sur toutes les covers Strapi */
     filter: saturate(0.9) sepia(0.06) contrast(1.03);
   }
@@ -331,7 +334,10 @@ const {
     display: block;
     margin: 44px auto;
     border-radius: 6px;
-    box-shadow: 0 20px 40px -28px rgba(16, 20, 47, 0.30);
+    /* Ombre stratifiée : une près (sharp), une loin (soft) — plus naturel */
+    box-shadow:
+      0 4px 12px -4px rgba(16, 20, 47, 0.18),
+      0 24px 56px -18px rgba(16, 20, 47, 0.42);
     filter: saturate(0.9) sepia(0.06) contrast(1.03);
   }
   .article-content :global(figure) {
