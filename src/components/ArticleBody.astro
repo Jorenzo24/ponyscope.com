@@ -55,6 +55,12 @@ const {
       {/* === Colonne centrale : carte paper === */}
       <main class="article-main">
 
+        {/* Ornements de coin façon gravure d'imprimerie */}
+        <span class="paper-corner paper-corner--tl" aria-hidden="true"></span>
+        <span class="paper-corner paper-corner--tr" aria-hidden="true"></span>
+        <span class="paper-corner paper-corner--bl" aria-hidden="true"></span>
+        <span class="paper-corner paper-corner--br" aria-hidden="true"></span>
+
         {excerpt && (
           <p class="lede" set:html={excerpt}></p>
         )}
@@ -142,9 +148,15 @@ const {
     align-self: start;
   }
 
-  /* === Carte paper centrale === */
+  /* === Carte paper centrale ===
+     Background : couleur paper + texture papier (SVG noise inline) très
+     subtile, façon Hermès / Cereal. La granulation se voit à peine en
+     screenshot mais réchauffe l'écran à la lecture. */
   .article-main {
-    background: var(--paper);
+    position: relative;
+    background-color: var(--paper);
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 400'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.08 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+    background-size: 280px 280px;
     /* padding-top réduit : on veut que le chapô commence près du bord
        supérieur de la carte (qui touche le hero), façon page de magazine. */
     padding: 40px 80px 80px;
@@ -152,6 +164,23 @@ const {
       0 1px 0 rgba(16, 20, 47, 0.04),
       0 30px 80px -40px rgba(16, 20, 47, 0.18);
   }
+
+  /* === Coins ornés (gravure d'imprimerie) ===
+     4 petits crochets gold dans les 4 coins de la carte papier.
+     Une seule géométrie SVG, rotation 90/180/270deg pour les autres coins. */
+  .paper-corner {
+    position: absolute;
+    width: 32px;
+    height: 32px;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' fill='none' stroke='%23BF9B66' stroke-width='1' stroke-linecap='round'><path d='M 2 18 L 2 5 Q 2 2, 5 2 L 18 2'/><circle cx='2' cy='2' r='1.4' fill='%23BF9B66' stroke='none'/></svg>");
+    background-repeat: no-repeat;
+    background-size: contain;
+  }
+  .paper-corner--tl { top: 16px; left: 16px; }
+  .paper-corner--tr { top: 16px; right: 16px; transform: rotate(90deg); }
+  .paper-corner--br { bottom: 16px; right: 16px; transform: rotate(180deg); }
+  .paper-corner--bl { bottom: 16px; left: 16px; transform: rotate(270deg); }
 
   /* === Chapô (drop cap gold italique) === */
   .lede {
