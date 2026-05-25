@@ -209,7 +209,10 @@ const {
     height: auto;
     display: block;
     margin: 0 auto;
-    border-radius: 6px;
+    border-radius: 4px;
+    /* Liseré blanc "tirage matté" : passepartout net qui détache l'image
+       du fond paper */
+    border: 10px solid #FFFFFF;
     /* Ombre stratifiée, plus marquée que les images inline (la cover est l'image héro) */
     box-shadow:
       0 6px 16px -6px rgba(16, 20, 47, 0.20),
@@ -333,7 +336,9 @@ const {
     height: auto;
     display: block;
     margin: 44px auto;
-    border-radius: 6px;
+    border-radius: 4px;
+    /* Liseré blanc "tirage matté" : un peu plus fin que la cover (8px) */
+    border: 8px solid #FFFFFF;
     /* Ombre stratifiée : une près (sharp), une loin (soft) — plus naturel */
     box-shadow:
       0 4px 12px -4px rgba(16, 20, 47, 0.18),
