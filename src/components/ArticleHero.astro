@@ -43,6 +43,8 @@ const {
       </nav>
     )}
 
+    <h1 class="hero-title" set:html={title}></h1>
+
     {(category || date || readingTime) && (
       <div class="hero-eyebrow">
         {category && <span class="eyebrow-item category">{category}</span>}
@@ -56,8 +58,6 @@ const {
         )}
       </div>
     )}
-
-    <h1 class="hero-title" set:html={title}></h1>
 
     <OrnamentDivider symbol="✦" width="56px" variant="gold-soft" marginY="0" />
   </div>
@@ -140,13 +140,14 @@ const {
   .hero-crumbs a:hover { color: var(--gold-soft); }
   .hero-crumbs .crumb-sep { color: var(--gold); opacity: 0.6; }
 
-  /* === Eyebrow : catégorie · date · lecture === */
+  /* === Eyebrow : catégorie · date · lecture ===
+     Maintenant SOUS le titre — moins de margin-bottom (juste avant l'ornement) */
   .hero-eyebrow {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 16px;
-    margin-bottom: 56px;
+    margin-bottom: 36px;
     font-family: var(--font-sans);
     font-size: 11px;
     text-transform: uppercase;
