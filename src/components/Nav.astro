@@ -5,10 +5,16 @@
 
 <nav class="nav">
   <div class="nav-inner">
-    <a href="/" class="logo">
+    <a href="/" class="logo" aria-label="Ponyscope — accueil">
       <span class="logo-mark">
-        <span class="logo-icon">P</span>
-        Ponyscope
+        <img
+          class="logo-icon"
+          src="/logo-carre-ponyscope.jpg"
+          alt=""
+          width="36"
+          height="36"
+        />
+        <span class="logo-word">Ponyscope</span>
       </span>
     </a>
     <ul class="nav-links">
@@ -66,18 +72,14 @@
     gap: 10px;
   }
   .logo-icon {
-    width: 32px;
-    height: 32px;
-    background: var(--navy);
-    color: var(--gold);
+    width: 36px;
+    height: 36px;
+    object-fit: cover;
     border-radius: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: var(--font-serif);
-    font-style: italic;
-    font-weight: 600;
-    font-size: 22px;
+    display: block;
+    flex-shrink: 0;
+  }
+  .logo-word {
     line-height: 1;
   }
   .nav-links {
@@ -137,7 +139,7 @@
     .nav-links { display: none; }
     .nav-search { display: none; }
     .logo { font-size: 22px; }
-    .logo-icon { width: 28px; height: 28px; font-size: 18px; }
+    .logo-icon { width: 30px; height: 30px; }
     .nav-cta { padding: 9px 16px; font-size: 10px; }
   }
 </style>
