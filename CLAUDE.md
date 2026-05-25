@@ -30,7 +30,8 @@ communauté) + couches de monétisation.
 | Front | **Astro 6** (HTML statique pré-rendu, SEO maximal, `output: 'static'`) | ✅ en prod |
 | CMS / contenu | **Strapi 5** self-hosted sur `cms.ponyscope.com` | ✅ en prod |
 | Hébergement front | **Cloudflare Pages** (gratuit, CDN, build auto à chaque push main) | ✅ en prod |
-| Hébergement Strapi | **VPS Hetzner** (géré par le dev de Joseph) | ✅ en prod |
+| Hébergement Strapi | **VPS Hetzner** (géré directement par Joseph) | ✅ en prod |
+| Auto-rebuild | Webhook Strapi → Cloudflare Deploy Hook (entry.* + media.*) | ✅ en prod |
 | Stockage images | **VPS Hetzner** (uploads/ servis par Strapi) | ✅ en prod |
 
 - Le site est monté **from scratch**, PAS WordPress.
@@ -91,13 +92,22 @@ communauté) + couches de monétisation.
 🐛 Bugs connus à corriger (non bloquants) :
 - Le `<title>` de l'onglet affiche encore « Contre Galop » au lieu de
   « Ponyscope » (à fixer dans `BaseLayout.astro` ou la source Strapi).
-- Images Strapi qui apparaissent pixelisées sur le hero (à investiguer :
-  qualité source, compression Strapi, ou taille rendue trop grande).
 - Chapô dupliqué : l'excerpt Strapi est souvent identique au 1er paragraphe
   du `content`, donc affiché deux fois. À régler dans `BlocksRenderer.astro`
   (skip le 1er paragraphe si identique à l'excerpt).
 - ~20 articles non migrés vers Strapi — bug `metaRobots` probable, à
   investiguer côté script de migration.
+- **13/14 avatars d'auteurs manquants** dans Strapi (seul Joseph Lambert
+  a été uploadé manuellement). Le script de migration n'a pas traité les
+  photos d'auteurs. Soit upload manuel (Strapi admin → Authors), soit
+  étendre le script, soit garder le fallback initiales (cercle bordé or)
+  qui est élégant et fait magazine.
+
+ℹ️ Notes data :
+- Les images de cover migrées depuis WP sont en résolution moyenne (~760px)
+  — d'où le choix design de mettre la cover dans le flow (taille native)
+  plutôt qu'en hero étiré. Ré-extraction des images source possible plus
+  tard si on veut un hero full-bleed sur certains articles phares.
 
 🔜 Reste à faire (ordre proposé) :
 1. Quick wins : fix `<title>` + chapô dupliqué.
@@ -132,13 +142,21 @@ communauté) + couches de monétisation.
   que ça marche.
 - ✅ Avant un gros changement : expliquer le plan, attendre validation.
 - ✅ Commits Git réguliers avec messages clairs (en français).
-- ✅ **Workflow de déploiement** : `git push origin main` déclenche un build
-  Cloudflare Pages automatique (~1-2 min) puis push en prod sur `ponyscope.com`.
-  Pas besoin de toucher au dashboard Cloudflare. Pour tester en local
-  avant push : `npm run dev` ou `npm run build && npm run preview`.
+- ✅ **Workflow de déploiement** : 2 chemins, tous deux automatiques :
+  1. `git push origin main` → build Cloudflare Pages (~1-2 min) → prod.
+  2. **Tout save dans Strapi** (entry.* ou media.*) → webhook configuré qui
+     appelle un Cloudflare Deploy Hook → rebuild automatique. Aucune action
+     manuelle requise quand un rédacteur publie/modifie un article.
+  → Donc plus jamais besoin de toucher au dashboard Cloudflare en usage
+  courant. Pour tester en local avant push : `npm run dev` ou
+  `npm run build && npm run preview`.
 - ⚠️ **Browser pour Cloudflare** : Brave bloque silencieusement certaines
   étapes OAuth de Cloudflare (Shields/cookies tiers). Utiliser Safari ou
   Chrome pour toute interaction avec le dashboard Cloudflare.
+- 🔒 **Deploy Hook URL** : c'est un secret. Ne JAMAIS la coller en clair
+  dans un chat, un commit, un fichier versionné. En cas d'exposition,
+  rotater immédiatement (Cloudflare → Settings → Deploy Hooks → delete +
+  recreate, puis maj de l'URL dans Strapi → Settings → Webhooks).
 
 ---
 
@@ -148,9 +166,15 @@ communauté) + couches de monétisation.
   avec Joseph. Claude (chat) prépare des prompts précis.
 - **Exécution technique** : Claude Code (cet environnement), qui a accès au
   système, installe, teste, debugge en live.
-- **Strapi côté serveur** : Joseph + son développeur (en parallèle).
-- Joseph débute sur Astro : expliquer les commandes, aller pas à pas, ne pas
-  enchaîner plusieurs grosses opérations sans confirmation.
+- **Joseph fait tout en solo** : backend (Strapi self-hosted Hetzner),
+  migration WP→Strapi, infra, front Astro. Pas de dev externe.
+- Joseph est compétent côté backend / infra, **débute sur Astro** :
+  expliquer les particularités Astro (SSG, getStaticPaths, slots) quand
+  on en croise. Sur le reste (Node, Strapi, Linux, Git, DNS), on peut
+  parler dense.
+- Pour les longues opérations UI, aller pas à pas avec validation
+  intermédiaire ; sur les fixes ciblés, on peut pousser direct en prod
+  (push to main → auto-deploy).
 
 ---
 
