@@ -34,6 +34,13 @@ function youtubeId(url: string): string | null {
   return null;
 }
 
+// Une URL n'est promue en VRAI embed que si elle pointe sur /embed/.
+// Les URLs /watch?v= et youtu.be restent des liens texte (souvent des
+// crédits ou des "voir la vidéo originale" dans les articles migrés du WP).
+function isYoutubeEmbedURL(url: string): boolean {
+  return Boolean(url && /youtube\.com\/embed\//.test(url));
+}
+
 function renderText(node: any): string {
   let html = escapeHtml(node.text || '');
   if (node.code) html = '<code>' + html + '</code>';
@@ -60,9 +67,15 @@ function renderInline(children: any[]): string {
 
 function renderBlock(block: any): string {
   if (block.type === 'paragraph') {
-    const ytLink = (block.children || []).find((c: any) => c.type === 'link' && youtubeId(c.url));
-    if (ytLink) {
-      const ytId = youtubeId(ytLink.url);
+    // On ne promeut le paragraphe en embed que si on trouve une URL /embed/.
+    // Tout le reste (liens /watch?v=, youtu.be) est rendu comme un paragraphe
+    // normal avec un lien cliquable, pour éviter de doubler les vidéos quand
+    // l'article a un embed suivi d'un lien de crédit.
+    const ytEmbedLink = (block.children || []).find(
+      (c: any) => c.type === 'link' && isYoutubeEmbedURL(c.url || '')
+    );
+    if (ytEmbedLink) {
+      const ytId = youtubeId(ytEmbedLink.url);
       return '<div class="video-embed"><iframe src="https://www.youtube.com/embed/' + ytId + '" title="YouTube video" frameborder="0" allowfullscreen></iframe></div>';
     }
     return '<p>' + renderInline(block.children || []) + '</p>';
