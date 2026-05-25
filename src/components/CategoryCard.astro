@@ -1,0 +1,176 @@
+---
+// CategoryCard.astro
+// Carte d'article pour les listings de catégorie (taille magazine, plus grosse
+// que ArticleRelated). Image portrait 4:5, catégorie label gold, titre Cormorant,
+// date italique.
+
+import { mediaURL, getArticlePath } from '../lib/strapi.js';
+
+export interface Props {
+  article: any;
+}
+
+const { article } = Astro.props;
+
+function formatDate(a: any): string {
+  const raw = a?.originalPublishedAt || a?.publishedAt;
+  if (!raw) return '';
+  try {
+    return new Date(raw).toLocaleDateString('fr-FR', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    });
+  } catch {
+    return '';
+  }
+}
+
+function coverURL(a: any): string | undefined {
+  const cover = a?.cover;
+  if (!cover) return undefined;
+  // On préfère medium pour la taille de card (≈ 600-700px)
+  const candidate =
+    cover.formats?.medium?.url ||
+    cover.formats?.small?.url ||
+    cover.url;
+  return candidate ? mediaURL(candidate) : undefined;
+}
+---
+
+<article class="card">
+  <a class="card-link" href={getArticlePath(article)}>
+    <div class="card-media">
+      {coverURL(article) ? (
+        <img
+          src={coverURL(article)}
+          alt={article?.cover?.alternativeText || ''}
+          loading="lazy"
+        />
+      ) : (
+        <div class="card-media-empty" aria-hidden="true"></div>
+      )}
+    </div>
+    <div class="card-body">
+      {article?.primaryCategory?.name && (
+        <span class="card-cat">{article.primaryCategory.name}</span>
+      )}
+      <h2 class="card-title" set:html={article.title}></h2>
+      {article.excerpt && (
+        <p class="card-excerpt" set:html={article.excerpt}></p>
+      )}
+      {formatDate(article) && (
+        <time class="card-date">{formatDate(article)}</time>
+      )}
+    </div>
+  </a>
+</article>
+
+<style>
+  .card {
+    background: var(--paper);
+    box-shadow:
+      0 1px 0 rgba(16, 20, 47, 0.04),
+      0 30px 60px -40px rgba(16, 20, 47, 0.18);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  .card:hover {
+    transform: translateY(-4px);
+    box-shadow:
+      0 1px 0 rgba(16, 20, 47, 0.04),
+      0 40px 80px -36px rgba(16, 20, 47, 0.28);
+  }
+
+  .card-link {
+    display: block;
+    color: inherit;
+    text-decoration: none;
+    border-bottom: none;
+  }
+
+  /* Media : ratio 4:5 portrait, façon Vogue/Cereal */
+  .card-media {
+    position: relative;
+    aspect-ratio: 4 / 5;
+    overflow: hidden;
+    background: var(--ivory-warm);
+  }
+  .card-media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.6s ease;
+  }
+  .card:hover .card-media img {
+    transform: scale(1.04);
+  }
+  .card-media-empty {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, var(--ivory-warm), var(--ivory));
+  }
+
+  /* Corps de la card */
+  .card-body {
+    padding: 26px 28px 30px;
+  }
+
+  .card-cat {
+    display: inline-block;
+    font-family: var(--font-sans);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.32em;
+    color: var(--gold-deep);
+    font-weight: 600;
+    margin-bottom: 14px;
+  }
+
+  .card-title {
+    font-family: var(--font-serif);
+    font-weight: 400;
+    font-size: 22px;
+    line-height: 1.2;
+    letter-spacing: -0.012em;
+    color: var(--navy);
+    margin: 0 0 14px;
+    transition: color 0.2s;
+    /* clamp à 3 lignes */
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .card-title :global(em) { font-style: italic; }
+  .card:hover .card-title {
+    color: var(--gold-deep);
+  }
+
+  .card-excerpt {
+    font-family: var(--font-serif);
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--ink-mid);
+    margin: 0 0 18px;
+    /* clamp à 2 lignes */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .card-excerpt :global(em) { font-style: italic; }
+
+  .card-date {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 13px;
+    color: var(--ink-soft);
+    letter-spacing: 0.01em;
+  }
+
+  @media (max-width: 768px) {
+    .card-body { padding: 20px 22px 24px; }
+    .card-title { font-size: 19px; }
+  }
+</style>

@@ -1,0 +1,228 @@
+---
+// CategoryView.astro
+// Page de catégorie : hero compact navy avec titre + count, optionnellement
+// suivi d'une rangée de sous-catégories, puis grille d'articles sur fond ivoire.
+//
+// Reçoit l'objet catégorie produit par getCategoryTree() :
+//   { path, slug, articles, subcategories }
+
+import CategoryCard from './CategoryCard.astro';
+import OrnamentDivider from './OrnamentDivider.astro';
+import { prettyCategoryName } from '../lib/strapi.js';
+
+export interface Props {
+  category: {
+    path: string;
+    slug: string;
+    articles: any[];
+    subcategories: string[];
+  };
+}
+
+const { category } = Astro.props;
+const name = prettyCategoryName(category.slug);
+const count = category.articles.length;
+
+// Breadcrumbs : on découpe le path en segments
+const segs = category.path.replace(/^\/+|\/+$/g, '').split('/').filter(Boolean);
+const crumbs = segs.map((s, i) => ({
+  label: prettyCategoryName(s),
+  path: '/' + segs.slice(0, i + 1).join('/'),
+  isLast: i === segs.length - 1,
+}));
+
+// Sub-catégories : nom + path
+const subs = category.subcategories.map((p) => ({
+  path: p,
+  label: prettyCategoryName(p.split('/').filter(Boolean).pop() || ''),
+}));
+---
+
+<header class="cat-hero">
+  <div class="cat-hero-veil"></div>
+  <div class="cat-hero-content">
+    <nav class="cat-crumbs" aria-label="Fil d'ariane">
+      <a href="/">Accueil</a>
+      {crumbs.map((c, i) => (
+        <>
+          <span class="sep">·</span>
+          {c.isLast ? (
+            <span class="current">{c.label}</span>
+          ) : (
+            <a href={c.path}>{c.label}</a>
+          )}
+        </>
+      ))}
+    </nav>
+
+    <h1 class="cat-title">{name}</h1>
+
+    <OrnamentDivider symbol="✦" width="48px" variant="gold-soft" marginY="0" />
+
+    <p class="cat-count">
+      {count} article{count > 1 ? 's' : ''}
+    </p>
+  </div>
+</header>
+
+{subs.length > 0 && (
+  <div class="cat-subs">
+    <div class="cat-subs-inner">
+      <a class="cat-sub cat-sub--all" href={category.path}>Tout {name}</a>
+      {subs.map((s) => (
+        <a class="cat-sub" href={s.path}>{s.label}</a>
+      ))}
+    </div>
+  </div>
+)}
+
+<section class="cat-grid-wrap">
+  <div class="cat-grid">
+    {category.articles.map((article) => (
+      <CategoryCard article={article} />
+    ))}
+  </div>
+</section>
+
+<style>
+  /* === Hero compact navy === */
+  .cat-hero {
+    position: relative;
+    background:
+      radial-gradient(
+        ellipse 120% 80% at center,
+        transparent 0%,
+        rgba(8, 10, 31, 0.55) 100%
+      ),
+      var(--navy);
+    color: var(--paper);
+    padding: 90px 24px 80px;
+    text-align: center;
+    overflow: hidden;
+  }
+  .cat-hero-veil {
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      100deg,
+      rgba(255, 255, 255, 0.012) 0 1px,
+      transparent 1px 3px
+    );
+    pointer-events: none;
+  }
+  .cat-hero-content {
+    position: relative;
+    z-index: 1;
+    max-width: 900px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 28px;
+  }
+
+  .cat-crumbs {
+    font-family: var(--font-sans);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.32em;
+    color: rgba(250, 246, 238, 0.55);
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+  }
+  .cat-crumbs a {
+    color: rgba(250, 246, 238, 0.75);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  .cat-crumbs a:hover { color: var(--gold-soft); }
+  .cat-crumbs .sep { color: var(--gold); opacity: 0.6; }
+  .cat-crumbs .current { color: var(--gold-soft); }
+
+  .cat-title {
+    font-family: var(--font-serif);
+    font-weight: 400;
+    font-size: clamp(48px, 6vw, 88px);
+    line-height: 1.02;
+    letter-spacing: -0.025em;
+    color: var(--paper);
+    margin: 0;
+  }
+  .cat-title :global(em) { font-style: italic; color: var(--gold-soft); }
+
+  .cat-count {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 16px;
+    color: rgba(250, 246, 238, 0.6);
+    margin: 0;
+    letter-spacing: 0.02em;
+  }
+
+  /* === Rangée des sous-catégories === */
+  .cat-subs {
+    background: var(--navy-deep);
+    border-bottom: 1px solid rgba(191, 155, 102, 0.15);
+  }
+  .cat-subs-inner {
+    max-width: 1480px;
+    margin: 0 auto;
+    padding: 22px 32px;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px 32px;
+  }
+  .cat-sub {
+    font-family: var(--font-sans);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.28em;
+    color: rgba(250, 246, 238, 0.7);
+    text-decoration: none;
+    padding: 6px 0;
+    transition: color 0.2s;
+    border-bottom: none;
+  }
+  .cat-sub:hover { color: var(--gold-soft); }
+  .cat-sub--all {
+    color: var(--gold-soft);
+    font-weight: 500;
+  }
+
+  /* === Grille d'articles === */
+  .cat-grid-wrap {
+    background: var(--ivory);
+    padding: 90px 32px 100px;
+  }
+  .cat-grid {
+    max-width: 1480px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 56px 44px;
+  }
+
+  @media (max-width: 1099px) {
+    .cat-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 48px 32px;
+    }
+  }
+  @media (max-width: 640px) {
+    .cat-hero { padding: 70px 20px 60px; }
+    .cat-hero-content { gap: 22px; }
+    .cat-title { font-size: clamp(38px, 9vw, 60px); }
+    .cat-subs-inner { padding: 16px 20px; gap: 6px 22px; }
+    .cat-sub { font-size: 10px; letter-spacing: 0.22em; }
+    .cat-grid-wrap { padding: 56px 16px 60px; }
+    .cat-grid {
+      grid-template-columns: 1fr;
+      gap: 40px;
+    }
+  }
+</style>

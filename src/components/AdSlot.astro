@@ -32,11 +32,12 @@ const {
 
 const hasContent = Astro.slots.has('default');
 
-// En production, si on veut masquer les placeholders vides
-const hidePlaceholders =
-  import.meta.env.PUBLIC_HIDE_AD_PLACEHOLDERS === '1';
-const showPlaceholder = !hasContent && !hidePlaceholders;
-const renderNothing = !hasContent && hidePlaceholders;
+// Par défaut, les placeholders ne s'affichent QU'en dev. En prod, si pas de
+// vraie pub, l'emplacement disparaît complètement (height 0, margin 0).
+// Pour forcer leur affichage en prod (debug), pose PUBLIC_SHOW_AD_PLACEHOLDERS=1.
+const forceShow = import.meta.env.PUBLIC_SHOW_AD_PLACEHOLDERS === '1';
+const showPlaceholder = !hasContent && (import.meta.env.DEV || forceShow);
+const renderNothing = !hasContent && !showPlaceholder;
 ---
 
 {!renderNothing && (

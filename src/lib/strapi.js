@@ -155,6 +155,125 @@ export function extractHeadings(blocks) {
 }
 
 /**
+ * Construit l'arbre des catégories à partir des canonicalURLs des articles.
+ * Les ancêtres d'un article (chaque segment de l'URL sauf le dernier) sont
+ * considérés comme des catégories qui contiennent cet article.
+ *
+ * Exemple : un article à `/blog/tops-cheval/foo` est rattaché aux catégories
+ * `/blog` ET `/blog/tops-cheval` (parents inclusifs).
+ *
+ * @param {Array<object>} articles
+ * @returns {Map<string, {path:string, slug:string, articles:Array, subcategories:string[]}>}
+ */
+export function getCategoryTree(articles) {
+  const map = new Map();
+  if (!Array.isArray(articles)) return map;
+
+  for (const article of articles) {
+    const url = article?.seo?.canonicalURL;
+    if (!url) continue;
+    let pathname;
+    try {
+      const u = new URL(url);
+      pathname = u.pathname.replace(/^\/+|\/+$/g, '');
+    } catch {
+      continue;
+    }
+    const segs = pathname.split('/').filter(Boolean);
+    if (segs.length < 2) continue; // pas d'ancêtre (juste un slug racine)
+
+    // Pour chaque niveau ancestral, on attache l'article
+    for (let i = 1; i < segs.length; i++) {
+      const catPath = '/' + segs.slice(0, i).join('/');
+      if (!map.has(catPath)) {
+        map.set(catPath, {
+          path: catPath,
+          slug: segs[i - 1],
+          articles: [],
+          subcategoryPaths: new Set(),
+        });
+      }
+      map.get(catPath).articles.push(article);
+      // Le niveau suivant (s'il existe ET n'est pas le dernier seg = slug article)
+      // est une sous-catégorie directe
+      if (i + 1 < segs.length) {
+        const subPath = '/' + segs.slice(0, i + 1).join('/');
+        map.get(catPath).subcategoryPaths.add(subPath);
+      }
+    }
+  }
+
+  // Tri articles par date desc + transforme subcategoryPaths en tableau trié
+  const byDateDesc = (a, b) => {
+    const da = new Date(a.originalPublishedAt || a.publishedAt || 0).getTime();
+    const db = new Date(b.originalPublishedAt || b.publishedAt || 0).getTime();
+    return db - da;
+  };
+  for (const cat of map.values()) {
+    cat.articles.sort(byDateDesc);
+    cat.subcategories = [...cat.subcategoryPaths].sort();
+    delete cat.subcategoryPaths;
+  }
+
+  return map;
+}
+
+/**
+ * Transforme un slug en nom lisible : "tops-cheval" → "Tops Cheval".
+ * @param {string} slug
+ * @returns {string}
+ */
+export function prettyCategoryName(slug) {
+  return String(slug || '')
+    .replace(/-/g, ' ')
+    .replace(/\b\p{L}/gu, (c) => c.toUpperCase());
+}
+
+/**
+ * Si le 1er paragraphe du contenu est un quasi-doublon de l'excerpt
+ * (chapô) — fréquent dans les articles migrés du WordPress —, on le supprime
+ * pour éviter le doublon dans la page article.
+ *
+ * Heuristique : on compare les textes plats normalisés (lowercase + whitespace
+ * collapsed). Si égal, ou si l'un commence par les 80 premiers caractères de
+ * l'autre, on considère doublon.
+ *
+ * @param {Array<object>} blocks  Blocks Strapi du content
+ * @param {string} excerpt        Excerpt brut (peut contenir du HTML léger)
+ * @returns {Array<object>}       Blocks éventuellement amputés du 1er paragraphe
+ */
+export function stripDuplicateLeadingParagraph(blocks, excerpt) {
+  if (!excerpt || !Array.isArray(blocks) || blocks.length === 0) return blocks;
+  const first = blocks[0];
+  if (!first || first.type !== 'paragraph') return blocks;
+
+  const norm = (s) =>
+    String(s || '')
+      .replace(/<[^>]+>/g, '')
+      .normalize('NFC')
+      .replace(/[\s ]+/g, ' ')
+      .trim()
+      .toLowerCase();
+
+  const firstText = norm(nodeText(first));
+  const exText = norm(excerpt);
+
+  if (!firstText || !exText) return blocks;
+  if (firstText === exText) return blocks.slice(1);
+
+  // Comparaison de préfixe (utile quand un des deux est plus long mais commence pareil)
+  const head = (s) => s.slice(0, 80);
+  if (firstText.length >= 60 && exText.length >= 60 && head(firstText) === head(exText)) {
+    return blocks.slice(1);
+  }
+  // Un contient l'autre sur ≥ 50 caractères
+  if (firstText.length > 50 && exText.includes(firstText.slice(0, 60))) return blocks.slice(1);
+  if (exText.length > 50 && firstText.includes(exText.slice(0, 60))) return blocks.slice(1);
+
+  return blocks;
+}
+
+/**
  * Renvoie jusqu'à `limit` articles liés à l'article courant.
  * Stratégie : même primaryCategory, exclu lui-même, trié par date desc.
  * Fallback : complète avec d'autres articles récents si pas assez dans la catégorie.

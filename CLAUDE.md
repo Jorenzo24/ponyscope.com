@@ -95,13 +95,14 @@ communauté) + couches de monétisation.
 - Chapô dupliqué : l'excerpt Strapi est souvent identique au 1er paragraphe
   du `content`, donc affiché deux fois. À régler dans `BlocksRenderer.astro`
   (skip le 1er paragraphe si identique à l'excerpt).
-- ~20 articles non migrés vers Strapi — bug `metaRobots` probable, à
-  investiguer côté script de migration.
 - **13/14 avatars d'auteurs manquants** dans Strapi (seul Joseph Lambert
   a été uploadé manuellement). Le script de migration n'a pas traité les
   photos d'auteurs. Soit upload manuel (Strapi admin → Authors), soit
   étendre le script, soit garder le fallback initiales (cercle bordé or)
   qui est élégant et fait magazine.
+- Catégorie test à supprimer dans Strapi : slug
+  `vju86y7r5687ita7r0uv3lart1clebatar456tyt657hgt67ygfdtyrtuk67iuyguft7dfuydr`
+  (3 articles dedans à reclasser ailleurs).
 
 ℹ️ Notes data :
 - Les images de cover migrées depuis WP sont en résolution moyenne (~760px)
@@ -119,10 +120,14 @@ communauté) + couches de monétisation.
 5. Pages catégorie (`/blog`, `/tops`, `/tutos`, `/guides-galops`, `/metiers`,
    `/ethologie` — actuellement 404).
 6. Page d'accueil (`src/pages/index.astro` est encore l'ancien template).
-7. Investiguer + récupérer les 20 articles non migrés.
-8. **Quand prêt** : enlever le `noindex` global, passer à `index, follow`
+7. **Quand prêt** : enlever le `noindex` global, passer à `index, follow`
    selon le champ `metaRobots` de Strapi → bascule officielle (et 301
    globale de `contre-galop.com` → `ponyscope.com`).
+
+ℹ️ **Migration WP→Strapi complète** : 585 articles WP = 585 articles
+Strapi, 0 manquant (vérifié par comparaison des slugs). L'API publique du
+vieux WP est encore accessible à `https://contre-galop.com/wp-json/wp/v2/`
+si besoin de refaire des extractions.
 
 ---
 

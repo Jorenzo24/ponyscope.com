@@ -1,7 +1,7 @@
 ---
 // src/pages/[...path].astro
-// Template universel pour les articles Ponyscope.
-// Au build, génère UNE page statique par article, à l'URL exacte du canonicalURL Strapi.
+// Catch-all qui sert SOIT une page article, SOIT une page catégorie selon le
+// chemin demandé. Les deux types sont générés au build via getStaticPaths.
 
 import {
   getAllArticles,
@@ -9,6 +9,9 @@ import {
   mediaURL,
   extractHeadings,
   getRelatedArticles,
+  stripDuplicateLeadingParagraph,
+  getCategoryTree,
+  prettyCategoryName,
 } from '../lib/strapi.js';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Nav from '../components/Nav.astro';
@@ -16,103 +19,152 @@ import Footer from '../components/Footer.astro';
 import ArticleHero from '../components/ArticleHero.astro';
 import ArticleBody from '../components/ArticleBody.astro';
 import BlocksRenderer from '../components/BlocksRenderer.astro';
+import CategoryView from '../components/CategoryView.astro';
 
 // ----- Génération des chemins statiques (SSG) -----
 export async function getStaticPaths() {
   const articles = await getAllArticles();
+  const categoryTree = getCategoryTree(articles);
 
-  return articles
+  // 1) Pages d'article
+  const articleEntries = articles
     .map((article) => {
-      const fullPath = getArticlePath(article); // ex: "/blog/top-5-aquaponey"
-      // Astro veut "path" sans le slash de tête pour [...path]
+      const fullPath = getArticlePath(article);
       const path = fullPath.replace(/^\/+/, '');
-
-      // Articles liés calculés au build (même primaryCategory, exclu lui-même)
       const related = getRelatedArticles(article, articles, 3);
-
       return {
         params: { path },
-        props: { article, related },
+        props: { kind: 'article', article, related },
       };
     })
-    .filter((entry) => entry.params.path); // exclut les chemins vides
+    .filter((e) => e.params.path);
+
+  // 2) Pages de catégorie (racines + sous-catégories)
+  const categoryEntries = [...categoryTree.values()].map((cat) => {
+    const path = cat.path.replace(/^\/+/, '');
+    return {
+      params: { path },
+      props: { kind: 'category', category: cat },
+    };
+  }).filter((e) => e.params.path);
+
+  // Si une catégorie partage exactement le même path qu'un article (cas
+  // improbable mais à protéger), on garde la catégorie (la page article serait
+  // un sous-segment de toute façon).
+  const taken = new Set(categoryEntries.map((e) => e.params.path));
+  const dedupedArticles = articleEntries.filter((e) => !taken.has(e.params.path));
+
+  return [...categoryEntries, ...dedupedArticles];
 }
 
-// ----- Données de la page -----
-const { article, related } = Astro.props;
-
-// SEO
-const metaTitle = article.seo?.metaTitle || article.title;
-const metaDescription = article.seo?.metaDescription || article.excerpt || '';
-const canonical = article.seo?.canonicalURL || '';
-const ogImage = article.seo?.metaImage?.url
-  ? mediaURL(article.seo.metaImage.url)
-  : article.cover?.url
-    ? mediaURL(article.cover.url)
-    : undefined;
-
-// Date affichée (date originale WP, pas la date de migration)
-const publishedDate = article.originalPublishedAt
-  ? new Date(article.originalPublishedAt).toLocaleDateString('fr-FR', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    })
-  : undefined;
-
-// Catégorie affichée : on prend la primaryCategory si dispo
-const categoryName = article.primaryCategory?.name;
-
-// Image de cover (avec alt + caption éventuels depuis Strapi)
-const coverURL = article.cover?.url ? mediaURL(article.cover.url) : undefined;
-const coverAlt = article.cover?.alternativeText || article.title || '';
-const coverCaption = article.cover?.caption || undefined;
-
-// Headings du contenu (pour le TOC sidebar gauche)
-const headings = extractHeadings(article.content || []);
-
-// Auteur (nom + rôle + bio + avatar résolu)
-const authorName = article.author?.name;
-const authorBio = article.author?.bio || undefined;
-const authorAvatarURL = article.author?.avatar?.url
-  ? mediaURL(article.author.avatar.url)
-  : undefined;
-const authorData = authorName
-  ? {
-      name: authorName,
-      role: 'Rédacteur',
-      bio: authorBio,
-      avatarURL: authorAvatarURL,
-    }
-  : undefined;
+// ----- Données de la page : on regarde le kind pour brancher l'affichage -----
+const { kind } = Astro.props;
 ---
 
-<BaseLayout
-  title={metaTitle}
-  description={metaDescription}
-  canonicalURL={canonical || undefined}
-  ogImage={ogImage}
-  noindex={true}
->
-  <Nav slot="nav" />
+{kind === 'category' && (
+  (() => {
+    const { category } = Astro.props as { category: any };
+    const catName = prettyCategoryName(category.slug);
+    const metaTitle = `${catName} — Ponyscope`;
+    const metaDescription = `Tous les articles Ponyscope dans la catégorie ${catName}.`;
+    return (
+      <BaseLayout
+        title={metaTitle}
+        description={metaDescription}
+        noindex={true}
+      >
+        <Nav slot="nav" />
+        <CategoryView category={category} />
+        <Footer slot="footer" />
+      </BaseLayout>
+    );
+  })()
+)}
 
-  <ArticleHero
-    title={article.title}
-    category={categoryName}
-    date={publishedDate}
-  />
+{kind === 'article' && (
+  (() => {
+    const { article, related } = Astro.props as { article: any; related: any[] };
 
-  <ArticleBody
-    excerpt={article.excerpt}
-    cover={coverURL}
-    coverAlt={coverAlt}
-    coverCaption={coverCaption}
-    headings={headings}
-    author={authorData}
-    related={related}
-  >
-    <BlocksRenderer blocks={article.content || []} />
-  </ArticleBody>
+    // SEO
+    const metaTitle = article.seo?.metaTitle || article.title;
+    const metaDescription = article.seo?.metaDescription || article.excerpt || '';
+    const canonical = article.seo?.canonicalURL || '';
+    const ogImage = article.seo?.metaImage?.url
+      ? mediaURL(article.seo.metaImage.url)
+      : article.cover?.url
+        ? mediaURL(article.cover.url)
+        : undefined;
 
-  <Footer slot="footer" />
-</BaseLayout>
+    // Date affichée
+    const publishedDate = article.originalPublishedAt
+      ? new Date(article.originalPublishedAt).toLocaleDateString('fr-FR', {
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric',
+        })
+      : undefined;
+
+    const categoryName = article.primaryCategory?.name;
+
+    // Image de cover
+    const coverURL = article.cover?.url ? mediaURL(article.cover.url) : undefined;
+    const coverAlt = article.cover?.alternativeText || article.title || '';
+    const coverCaption = article.cover?.caption || undefined;
+
+    // Contenu : on enlève le 1er paragraphe s'il duplique le chapô
+    const contentBlocks = stripDuplicateLeadingParagraph(
+      article.content || [],
+      article.excerpt || ''
+    );
+
+    // Headings (pour le TOC sidebar gauche)
+    const headings = extractHeadings(contentBlocks);
+
+    // Auteur
+    const authorName = article.author?.name;
+    const authorBio = article.author?.bio || undefined;
+    const authorAvatarURL = article.author?.avatar?.url
+      ? mediaURL(article.author.avatar.url)
+      : undefined;
+    const authorData = authorName
+      ? {
+          name: authorName,
+          role: 'Rédacteur',
+          bio: authorBio,
+          avatarURL: authorAvatarURL,
+        }
+      : undefined;
+
+    return (
+      <BaseLayout
+        title={metaTitle}
+        description={metaDescription}
+        canonicalURL={canonical || undefined}
+        ogImage={ogImage}
+        noindex={true}
+      >
+        <Nav slot="nav" />
+
+        <ArticleHero
+          title={article.title}
+          category={categoryName}
+          date={publishedDate}
+        />
+
+        <ArticleBody
+          excerpt={article.excerpt}
+          cover={coverURL}
+          coverAlt={coverAlt}
+          coverCaption={coverCaption}
+          headings={headings}
+          author={authorData}
+          related={related}
+        >
+          <BlocksRenderer blocks={contentBlocks} />
+        </ArticleBody>
+
+        <Footer slot="footer" />
+      </BaseLayout>
+    );
+  })()
+)}
