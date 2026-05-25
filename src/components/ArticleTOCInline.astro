@@ -1,0 +1,197 @@
+---
+// ArticleTOCInline.astro
+// TOC inline en haut d'article (entre cover et content), repliable.
+// Remplace l'ancien TOC sidebar gauche : la grille 3 colonnes était fragile
+// sur les articles longs (sticky-deferred JS + parent rect = bugs subtils),
+// et chargeait visuellement l'espace de lecture.
+//
+// Design :
+//   - Balise <details> native (zéro JS, accessible clavier, robuste).
+//   - 2 filets or top/bottom comme une "table des chapitres" éditoriale.
+//   - Numérotation italique des h2 (01, 02, 03...) façon livre.
+//   - h3 indentés + italique + gris, sans numéro (clairement subordonnés).
+//   - 2 colonnes sur desktop → la liste reste compacte même sur Top 10.
+//
+// Seuil d'affichage : au moins 3 chapitres h2 (sinon inutile).
+
+export interface Props {
+  headings: Array<{ level: number; text: string; id: string }>;
+}
+
+const { headings = [] } = Astro.props;
+
+const h2Count = headings.filter((h) => h.level === 2).length;
+const visible = h2Count >= 3;
+
+// Pré-calcul des numéros de chapitre (uniquement sur les h2)
+let chapterNum = 0;
+const items = headings.map((h) => {
+  if (h.level === 2) {
+    chapterNum++;
+    return { ...h, number: String(chapterNum).padStart(2, '0') };
+  }
+  return { ...h, number: null as string | null };
+});
+---
+
+{visible && (
+  <details class="toc-inline">
+    <summary class="toc-summary">
+      <span class="toc-summary-label">Sommaire</span>
+      <span class="toc-summary-sep" aria-hidden="true">·</span>
+      <span class="toc-summary-meta">{h2Count} chapitres</span>
+      <span class="toc-summary-chevron" aria-hidden="true">
+        <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round">
+          <path d="M 3 6 L 8 11 L 13 6" />
+        </svg>
+      </span>
+    </summary>
+
+    <ol class="toc-inline-list">
+      {items.map((h) => (
+        <li class={`toc-inline-item toc-inline-item--h${h.level}`}>
+          <a href={`#${h.id}`}>
+            {h.number && <span class="toc-num">{h.number}</span>}
+            <span class="toc-text">{h.text}</span>
+          </a>
+        </li>
+      ))}
+    </ol>
+  </details>
+)}
+
+<style>
+  /* Conteneur : 2 filets or top/bottom, fond transparent → la paper card
+     reste visible derrière. Marges généreuses pour aérer entre cover et contenu. */
+  .toc-inline {
+    margin: 0 0 60px;
+    border-top: 1px solid var(--gold);
+    border-bottom: 1px solid var(--gold);
+    padding: 22px 0;
+  }
+  /* Cache la flèche native du <details> */
+  .toc-inline summary::-webkit-details-marker { display: none; }
+  .toc-inline summary::marker { content: ''; }
+
+  /* === Header cliquable === */
+  .toc-summary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+    color: var(--navy);
+    transition: color 0.2s;
+  }
+  .toc-summary:hover { color: var(--gold-deep); }
+
+  .toc-summary-label {
+    font-family: var(--font-sans);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.32em;
+    color: var(--gold-deep);
+    font-weight: 600;
+  }
+  .toc-summary-sep {
+    color: var(--gold);
+    opacity: 0.6;
+    font-family: var(--font-sans);
+    font-size: 11px;
+  }
+  .toc-summary-meta {
+    color: var(--ink-mid);
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 15px;
+    letter-spacing: 0.005em;
+  }
+  .toc-summary-chevron {
+    margin-left: 6px;
+    color: var(--gold-deep);
+    display: inline-flex;
+    transition: transform 0.3s ease;
+  }
+  .toc-inline[open] .toc-summary-chevron {
+    transform: rotate(180deg);
+  }
+
+  /* === Liste dépliée ===
+     2 colonnes sur desktop pour compacter les Top 10. */
+  .toc-inline-list {
+    list-style: none;
+    margin: 28px 0 6px;
+    padding: 0;
+    column-count: 2;
+    column-gap: 56px;
+  }
+  @media (max-width: 700px) {
+    .toc-inline-list { column-count: 1; column-gap: 0; }
+  }
+
+  .toc-inline-item {
+    break-inside: avoid;
+    margin: 0;
+    padding: 0;
+  }
+  .toc-inline-item a {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    padding: 10px 0;
+    color: var(--navy);
+    text-decoration: none;
+    border: none;
+    transition: color 0.2s;
+  }
+  .toc-inline-item a:hover { color: var(--gold-deep); }
+  .toc-inline-item a:hover .toc-num { color: var(--gold); }
+
+  .toc-num {
+    flex: 0 0 auto;
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 19px;
+    color: var(--gold-deep);
+    letter-spacing: 0;
+    line-height: 1;
+    min-width: 30px;
+  }
+  .toc-text {
+    font-family: var(--font-serif);
+    font-size: 16px;
+    line-height: 1.4;
+    color: var(--navy);
+  }
+  .toc-text :global(em) { font-style: italic; }
+
+  /* h3 : indenté, italique, gris, sans numéro */
+  .toc-inline-item--h3 a {
+    padding: 6px 0 6px 44px;
+  }
+  .toc-inline-item--h3 .toc-text {
+    font-style: italic;
+    font-size: 14px;
+    color: var(--ink-mid);
+  }
+
+  /* === Animation très subtile au dépli === */
+  .toc-inline[open] .toc-inline-list {
+    animation: tocReveal 0.35s ease-out both;
+  }
+  @keyframes tocReveal {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (max-width: 768px) {
+    .toc-inline { margin: 0 0 44px; padding: 18px 0; }
+    .toc-summary { flex-wrap: wrap; gap: 8px; }
+    .toc-summary-meta { font-size: 14px; }
+    .toc-inline-list { margin-top: 20px; }
+    .toc-num { font-size: 17px; min-width: 26px; }
+    .toc-text { font-size: 15px; }
+  }
+</style>

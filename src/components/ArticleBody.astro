@@ -10,7 +10,7 @@
 // En dessous de la grille : un emplacement publicitaire "découverte"
 // centré sur toute la largeur disponible.
 
-import ArticleTOC from './ArticleTOC.astro';
+import ArticleTOCInline from './ArticleTOCInline.astro';
 import ArticleAuthor from './ArticleAuthor.astro';
 import ArticleRelated from './ArticleRelated.astro';
 import AdSlot from './AdSlot.astro';
@@ -47,9 +47,6 @@ const {
   <div class="article-shell">
     <div class="article-grid">
 
-      {/* === Sidebar gauche : sommaire (auto-rend son propre <aside class="toc-wrap">) === */}
-      <ArticleTOC headings={headings} />
-
       {/* === Colonne centrale : carte paper === */}
       <main class="article-main">
 
@@ -74,6 +71,9 @@ const {
             {coverCaption && <figcaption set:html={coverCaption}></figcaption>}
           </figure>
         )}
+
+        {/* Sommaire repliable juste avant le contenu */}
+        <ArticleTOCInline headings={headings} />
 
         <AdSlot
           label="En partenariat avec"
@@ -127,12 +127,13 @@ const {
     padding: 0 48px 60px;
   }
 
-  /* === Grille 3 colonnes ===
-     TOC 220px | Article 760px | Aside 280px | gap 60px
-     Total ~1380px, ça respire dans 1480 - 96 = 1384 ✓ */
+  /* === Grille 2 colonnes ===
+     Article 760px | Aside 280px | gap 60px
+     Total ~1100px, centré dans 1480 - 96 = 1384 → ça respire largement.
+     Le sommaire est désormais inline (en haut d'article), plus en sidebar. */
   .article-grid {
     display: grid;
-    grid-template-columns: 220px minmax(0, 760px) 280px;
+    grid-template-columns: minmax(0, 760px) 280px;
     gap: 60px;
     justify-content: center;
     align-items: start;
