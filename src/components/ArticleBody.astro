@@ -155,14 +155,15 @@ const {
   .article-main {
     position: relative;
     background-color: var(--paper);
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 400'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.08 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 400'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.12 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
     background-size: 280px 280px;
     /* padding-top réduit : on veut que le chapô commence près du bord
        supérieur de la carte (qui touche le hero), façon page de magazine. */
     padding: 40px 80px 80px;
+    /* outline 1px très discret pour bien marquer la limite paper / cream */
     box-shadow:
-      0 1px 0 rgba(16, 20, 47, 0.04),
-      0 30px 80px -40px rgba(16, 20, 47, 0.18);
+      0 0 0 1px rgba(16, 20, 47, 0.07),
+      0 30px 80px -40px rgba(16, 20, 47, 0.22);
   }
 
   /* === Coins ornés (gravure d'imprimerie) ===
