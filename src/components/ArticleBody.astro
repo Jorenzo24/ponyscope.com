@@ -145,7 +145,9 @@ const {
   /* === Carte paper centrale === */
   .article-main {
     background: var(--paper);
-    padding: 80px;
+    /* padding-top réduit : on veut que le chapô commence près du bord
+       supérieur de la carte (qui touche le hero), façon page de magazine. */
+    padding: 40px 80px 80px;
     box-shadow:
       0 1px 0 rgba(16, 20, 47, 0.04),
       0 30px 80px -40px rgba(16, 20, 47, 0.18);
@@ -325,7 +327,7 @@ const {
       margin-top: 60px;
     }
     .article-main {
-      padding: 60px 48px;
+      padding: 28px 48px 60px;
     }
   }
 
@@ -334,7 +336,7 @@ const {
       padding: 0 12px 30px;
     }
     .article-main {
-      padding: 40px 24px;
+      padding: 20px 24px 40px;
     }
     .lede {
       font-size: 22px;
