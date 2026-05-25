@@ -1,0 +1,177 @@
+---
+import { mediaURL } from '../lib/strapi.js';
+
+interface Props {
+  blocks: any[];
+}
+
+const { blocks = [] } = Astro.props;
+
+function escapeHtml(text: string): string {
+  return String(text)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function youtubeId(url: string): string | null {
+  if (!url) return null;
+  const patterns = [
+    /youtube\.com\/embed\/([a-zA-Z0-9_-]{11})/,
+    /youtube\.com\/watch\?v=([a-zA-Z0-9_-]{11})/,
+    /youtu\.be\/([a-zA-Z0-9_-]{11})/,
+  ];
+  for (const re of patterns) {
+    const m = url.match(re);
+    if (m) return m[1];
+  }
+  return null;
+}
+
+function renderText(node: any): string {
+  let html = escapeHtml(node.text || '');
+  if (node.code) html = '<code>' + html + '</code>';
+  if (node.bold) html = '<strong>' + html + '</strong>';
+  if (node.italic) html = '<em>' + html + '</em>';
+  if (node.underline) html = '<u>' + html + '</u>';
+  if (node.strikethrough) html = '<s>' + html + '</s>';
+  return html;
+}
+
+function renderInline(children: any[]): string {
+  if (!Array.isArray(children)) return '';
+  return children.map((child) => {
+    if (child.type === 'text') return renderText(child);
+    if (child.type === 'link') {
+      const inner = renderInline(child.children || []);
+      const isExternal = child.url && child.url.startsWith('http');
+      const target = isExternal ? ' target="_blank" rel="noopener noreferrer"' : '';
+      return '<a href="' + escapeHtml(child.url || '#') + '"' + target + '>' + inner + '</a>';
+    }
+    return '';
+  }).join('');
+}
+
+function renderBlock(block: any): string {
+  if (block.type === 'paragraph') {
+    const ytLink = (block.children || []).find((c: any) => c.type === 'link' && youtubeId(c.url));
+    if (ytLink) {
+      const ytId = youtubeId(ytLink.url);
+      return '<div class="video-embed"><iframe src="https://www.youtube.com/embed/' + ytId + '" title="YouTube video" frameborder="0" allowfullscreen></iframe></div>';
+    }
+    return '<p>' + renderInline(block.children || []) + '</p>';
+  }
+
+  if (block.type === 'heading') {
+    const level = Math.min(Math.max(block.level || 2, 1), 6);
+    return '<h' + level + '>' + renderInline(block.children || []) + '</h' + level + '>';
+  }
+
+  if (block.type === 'image' && block.image) {
+    const img = block.image;
+    const src = mediaURL(img.url);
+    const alt = escapeHtml(img.alternativeText || '');
+    const w = img.width ? ' width="' + img.width + '"' : '';
+    const h = img.height ? ' height="' + img.height + '"' : '';
+    const caption = img.caption ? '<figcaption>' + escapeHtml(img.caption) + '</figcaption>' : '';
+    return '<figure><img src="' + src + '" alt="' + alt + '"' + w + h + ' loading="lazy" />' + caption + '</figure>';
+  }
+
+  if (block.type === 'list') {
+    const tag = block.format === 'ordered' ? 'ol' : 'ul';
+    const items = (block.children || []).map((item: any) => {
+      if (item.type === 'list-item') {
+        return '<li>' + renderInline(item.children || []) + '</li>';
+      }
+      return '';
+    }).join('');
+    return '<' + tag + '>' + items + '</' + tag + '>';
+  }
+
+  if (block.type === 'quote') {
+    return '<blockquote>' + renderInline(block.children || []) + '</blockquote>';
+  }
+
+  if (block.type === 'code') {
+    const codeText = (block.children || []).map((c: any) => c.text || '').join('');
+    return '<pre><code>' + escapeHtml(codeText) + '</code></pre>';
+  }
+
+  return '';
+}
+
+const html = blocks.map(renderBlock).join('');
+---
+
+<div class="article-body" set:html={html} />
+
+<style>
+  .article-body :global(p) {
+    margin: 1rem 0;
+    line-height: 1.7;
+  }
+  .article-body :global(h2),
+  .article-body :global(h3),
+  .article-body :global(h4) {
+    margin: 2rem 0 1rem;
+    line-height: 1.3;
+  }
+  .article-body :global(figure) {
+    margin: 2rem 0;
+    text-align: center;
+  }
+  .article-body :global(figure img) {
+    max-width: 100%;
+    height: auto;
+    border-radius: 4px;
+  }
+  .article-body :global(figcaption) {
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+    color: #666;
+    font-style: italic;
+  }
+  .article-body :global(blockquote) {
+    border-left: 3px solid #BF9B66;
+    padding-left: 1.2rem;
+    margin: 1.5rem 0;
+    font-style: italic;
+    color: #555;
+  }
+  .article-body :global(pre) {
+    background: #f6f6f6;
+    padding: 1rem;
+    border-radius: 4px;
+    overflow-x: auto;
+    font-size: 0.9rem;
+  }
+  .article-body :global(a) {
+    color: #10142F;
+    text-decoration: underline;
+    text-decoration-color: #BF9B66;
+  }
+  .article-body :global(ul),
+  .article-body :global(ol) {
+    margin: 1rem 0;
+    padding-left: 1.5rem;
+  }
+  .article-body :global(li) {
+    margin: 0.3rem 0;
+  }
+  .article-body :global(.video-embed) {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    margin: 2rem 0;
+  }
+  .article-body :global(.video-embed iframe) {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    border-radius: 4px;
+  }
+</style>
