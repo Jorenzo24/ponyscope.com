@@ -258,6 +258,89 @@ export function prettyCategoryName(slug) {
 }
 
 /**
+ * Échappe les caractères HTML d'une chaîne pour insertion sûre dans du HTML.
+ * @param {string} s
+ * @returns {string}
+ */
+function escapeHTML(s) {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/**
+ * Rend les children inline d'un bloc Strapi (paragraph/heading) en HTML.
+ * Réplique fidèle de la logique renderInline de BlocksRenderer.astro pour
+ * que le chapô extrait du 1er paragraphe ait exactement le même rendu que
+ * s'il était rendu dans le flow normal du contenu.
+ *
+ * Supporte : text + marks (bold/italic/underline/strikethrough/code) + link.
+ *
+ * @param {Array<object>} children
+ * @returns {string}  HTML inline
+ */
+function renderInlineHTML(children) {
+  if (!Array.isArray(children)) return '';
+  return children
+    .map((child) => {
+      if (!child) return '';
+      if (child.type === 'text') {
+        let html = escapeHTML(child.text || '');
+        if (child.code) html = `<code>${html}</code>`;
+        if (child.bold) html = `<strong>${html}</strong>`;
+        if (child.italic) html = `<em>${html}</em>`;
+        if (child.underline) html = `<u>${html}</u>`;
+        if (child.strikethrough) html = `<s>${html}</s>`;
+        return html;
+      }
+      if (child.type === 'link') {
+        const inner = renderInlineHTML(child.children || []);
+        const isExternal = child.url && child.url.startsWith('http');
+        const target = isExternal ? ' target="_blank" rel="noopener noreferrer"' : '';
+        return `<a href="${escapeHTML(child.url || '#')}"${target}>${inner}</a>`;
+      }
+      return '';
+    })
+    .join('');
+}
+
+/**
+ * Extrait le 1er paragraphe du contenu comme chapô (lede) avec drop cap,
+ * et le retire des blocks pour éviter qu'il apparaisse une 2e fois.
+ *
+ * Remplace l'ancienne stratégie qui utilisait l'excerpt Strapi : beaucoup
+ * d'articles migrés du WP ont des intros bien rédigées dans le contenu,
+ * et l'excerpt est généré automatiquement avec une troncature "[...]"
+ * disgracieuse. On préfère donc le vrai 1er paragraphe.
+ *
+ * Si le 1er bloc n'est pas un paragraphe (article qui démarre sur un
+ * heading ou une image), ou si le paragraphe est trop court pour faire
+ * un lede convaincant, renvoie ledeHTML: null (et aucun strip).
+ *
+ * @param {Array<object>} blocks
+ * @param {number} minChars  Seuil minimum (chars) pour considérer comme lede
+ * @returns {{ ledeHTML: string|null, remainingBlocks: Array<object> }}
+ */
+export function extractLedeFromBlocks(blocks, minChars = 80) {
+  if (!Array.isArray(blocks) || blocks.length === 0) {
+    return { ledeHTML: null, remainingBlocks: blocks || [] };
+  }
+  const first = blocks[0];
+  if (!first || first.type !== 'paragraph') {
+    return { ledeHTML: null, remainingBlocks: blocks };
+  }
+  const text = nodeText(first).trim();
+  if (text.length < minChars) {
+    return { ledeHTML: null, remainingBlocks: blocks };
+  }
+  const ledeHTML = renderInlineHTML(first.children || []);
+  return { ledeHTML, remainingBlocks: blocks.slice(1) };
+}
+
+/**
  * Si le 1er paragraphe du contenu est un quasi-doublon de l'excerpt
  * (chapô) — fréquent dans les articles migrés du WordPress —, on le supprime
  * pour éviter le doublon dans la page article.

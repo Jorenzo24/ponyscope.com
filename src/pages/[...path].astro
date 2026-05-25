@@ -9,7 +9,7 @@ import {
   mediaURL,
   extractHeadings,
   getRelatedArticles,
-  stripDuplicateLeadingParagraph,
+  extractLedeFromBlocks,
   getCategoryTree,
   prettyCategoryName,
   getArticleBreadcrumb,
@@ -113,11 +113,13 @@ const { kind } = Astro.props;
     const coverAlt = article.cover?.alternativeText || article.title || '';
     const coverCaption = article.cover?.caption || undefined;
 
-    // Contenu : on enlève le 1er paragraphe s'il duplique le chapô
-    const contentBlocks = stripDuplicateLeadingParagraph(
-      article.content || [],
-      article.excerpt || ''
-    );
+    // Chapô (lede) : on prend le 1er paragraphe du contenu et on le retire
+    // du flow pour qu'il ne soit pas affiché 2 fois. C'est plus propre que
+    // l'excerpt Strapi (souvent tronqué avec un "[...]" disgracieux).
+    // Si l'article ne démarre pas sur un paragraphe assez long, ledeHTML est
+    // null et aucun chapô n'est affiché.
+    const { ledeHTML, remainingBlocks } = extractLedeFromBlocks(article.content || []);
+    const contentBlocks = remainingBlocks;
 
     // Headings (pour le TOC sidebar gauche)
     const headings = extractHeadings(contentBlocks);
@@ -155,7 +157,7 @@ const { kind } = Astro.props;
         />
 
         <ArticleBody
-          excerpt={article.excerpt}
+          excerpt={ledeHTML || ''}
           cover={coverURL}
           coverAlt={coverAlt}
           coverCaption={coverCaption}
