@@ -14,8 +14,6 @@ export interface Props {
   title: string;
   category?: string;       // Ex: "Blog", "Tops", "Tutos"
   date?: string;           // Ex: "21 novembre 2010"
-  author?: string;         // Ex: "Pauline Bach"
-  authorRole?: string;     // Ex: "Rédactrice"
   readingTime?: number;    // optionnel : minutes (ex: 7)
 }
 
@@ -23,8 +21,6 @@ const {
   title,
   category,
   date,
-  author,
-  authorRole = 'Rédacteur',
   readingTime,
 } = Astro.props;
 ---
@@ -50,19 +46,6 @@ const {
     <h1 class="hero-title" set:html={title}></h1>
 
     <OrnamentDivider symbol="✦" width="56px" variant="gold-soft" marginY="0" />
-
-    {author && (
-      <div class="hero-byline">
-        <span class="prefix">Par</span>
-        <span class="name">{author}</span>
-        {authorRole && (
-          <>
-            <span class="dot">·</span>
-            <span class="role">{authorRole}</span>
-          </>
-        )}
-      </div>
-    )}
   </div>
 
   <div class="hero-scroll">
@@ -74,9 +57,9 @@ const {
 <style>
   .hero {
     position: relative;
-    min-height: 100vh;
-    height: 100vh;
-    max-height: 940px;
+    min-height: 560px;
+    height: 72vh;
+    max-height: 760px;
     background:
       radial-gradient(
         ellipse 120% 80% at center,
@@ -165,45 +148,6 @@ const {
     color: var(--gold-soft);
   }
 
-  /* === Byline auteur === */
-  .hero-byline {
-    margin-top: 44px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 12px;
-    font-family: var(--font-sans);
-    font-size: 12px;
-    color: rgba(250, 246, 238, 0.8);
-  }
-  .hero-byline .prefix {
-    color: rgba(250, 246, 238, 0.5);
-    font-family: var(--font-serif);
-    font-style: italic;
-    font-size: 16px;
-    letter-spacing: 0.01em;
-  }
-  .hero-byline .name {
-    color: var(--paper);
-    font-family: var(--font-serif);
-    font-style: italic;
-    font-size: 18px;
-    font-weight: 500;
-    letter-spacing: 0.01em;
-  }
-  .hero-byline .dot {
-    color: var(--gold);
-    opacity: 0.7;
-  }
-  .hero-byline .role {
-    text-transform: uppercase;
-    letter-spacing: 0.28em;
-    font-size: 10px;
-    color: rgba(250, 246, 238, 0.55);
-    font-weight: 500;
-  }
-
   /* === Indicateur "Lire" en bas du hero === */
   .hero-scroll {
     position: absolute;
@@ -233,7 +177,7 @@ const {
   }
 
   @media (max-width: 768px) {
-    .hero { height: auto; min-height: 88vh; padding: 120px 0 100px; }
+    .hero { height: auto; min-height: 64vh; padding: 100px 0 90px; max-height: none; }
     .hero-content { padding: 0 24px; }
     .hero-eyebrow {
       flex-wrap: wrap;
@@ -247,9 +191,6 @@ const {
       font-size: clamp(40px, 9vw, 64px);
       margin-bottom: 32px;
     }
-    .hero-byline { margin-top: 32px; gap: 10px; }
-    .hero-byline .name,
-    .hero-byline .prefix { font-size: 15px; }
     .hero-scroll { bottom: 24px; }
   }
 </style>
