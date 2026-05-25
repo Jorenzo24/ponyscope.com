@@ -54,8 +54,10 @@ const publishedDate = article.originalPublishedAt
 // Catégorie affichée : on prend la primaryCategory si dispo
 const categoryName = article.primaryCategory?.name;
 
-// Image de cover
+// Image de cover (avec alt + caption éventuels depuis Strapi)
 const coverURL = article.cover?.url ? mediaURL(article.cover.url) : undefined;
+const coverAlt = article.cover?.alternativeText || article.title || '';
+const coverCaption = article.cover?.caption || undefined;
 
 // Auteur
 const authorName = article.author?.name;
@@ -72,14 +74,18 @@ const authorName = article.author?.name;
 
   <ArticleHero
     title={article.title}
-    cover={coverURL}
     category={categoryName}
     date={publishedDate}
     author={authorName}
     authorRole="Rédacteur"
   />
 
-  <ArticleBody excerpt={article.excerpt}>
+  <ArticleBody
+    excerpt={article.excerpt}
+    cover={coverURL}
+    coverAlt={coverAlt}
+    coverCaption={coverCaption}
+  >
     <BlocksRenderer blocks={article.content || []} />
   </ArticleBody>
 

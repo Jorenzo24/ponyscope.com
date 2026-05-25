@@ -88,3 +88,103 @@ export function getArticlePath(article) {
   }
   return `/blog/${article.slug}`;
 }
+
+/**
+ * Slugifie un texte de heading pour générer un id d'ancre stable.
+ * Doit donner le MÊME résultat qu'utilisé par BlocksRenderer pour les ids HTML.
+ * @param {string} text
+ * @returns {string}
+ */
+export function slugifyHeading(text) {
+  return String(text || '')
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')        // accents
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80);
+}
+
+/**
+ * Récupère le texte plat d'un noeud Strapi (paragraphe / heading / link / ...).
+ * @param {object} node
+ * @returns {string}
+ */
+function nodeText(node) {
+  if (!node) return '';
+  if (typeof node.text === 'string') return node.text;
+  if (Array.isArray(node.children)) {
+    return node.children.map(nodeText).join('');
+  }
+  return '';
+}
+
+/**
+ * Extrait les headings (h2/h3) du contenu d'un article pour construire le TOC.
+ * Retourne un tableau d'objets { level, text, id }.
+ * @param {Array<object>} blocks
+ * @returns {Array<{level:number, text:string, id:string}>}
+ */
+export function extractHeadings(blocks) {
+  if (!Array.isArray(blocks)) return [];
+  const headings = [];
+  const used = new Map(); // pour dédupliquer les slugs identiques
+
+  for (const block of blocks) {
+    if (block?.type !== 'heading') continue;
+    const level = Math.min(Math.max(block.level || 2, 1), 6);
+    if (level < 2 || level > 3) continue; // on garde h2 et h3 dans le TOC
+
+    const text = nodeText(block).trim();
+    if (!text) continue;
+
+    let id = slugifyHeading(text);
+    if (used.has(id)) {
+      const n = used.get(id) + 1;
+      used.set(id, n);
+      id = `${id}-${n}`;
+    } else {
+      used.set(id, 1);
+    }
+
+    headings.push({ level, text, id });
+  }
+
+  return headings;
+}
+
+/**
+ * Renvoie jusqu'à `limit` articles liés à l'article courant.
+ * Stratégie : même primaryCategory, exclu lui-même, trié par date desc.
+ * Fallback : complète avec d'autres articles récents si pas assez dans la catégorie.
+ *
+ * @param {object} currentArticle
+ * @param {Array<object>} allArticles
+ * @param {number} limit  Nombre d'articles à retourner (3 par défaut)
+ * @returns {Array<object>}
+ */
+export function getRelatedArticles(currentArticle, allArticles, limit = 3) {
+  if (!currentArticle || !Array.isArray(allArticles)) return [];
+
+  const currentId = currentArticle.id;
+  const categoryId = currentArticle.primaryCategory?.id;
+
+  const byDateDesc = (a, b) => {
+    const da = new Date(a.originalPublishedAt || a.publishedAt || 0).getTime();
+    const db = new Date(b.originalPublishedAt || b.publishedAt || 0).getTime();
+    return db - da;
+  };
+
+  const sameCat = allArticles
+    .filter((a) => a.id !== currentId && a.primaryCategory?.id && a.primaryCategory.id === categoryId)
+    .sort(byDateDesc);
+
+  if (sameCat.length >= limit) return sameCat.slice(0, limit);
+
+  // Pas assez dans la catégorie : on complète avec les plus récents tout court
+  const others = allArticles
+    .filter((a) => a.id !== currentId && (!categoryId || a.primaryCategory?.id !== categoryId))
+    .sort(byDateDesc);
+
+  return [...sameCat, ...others].slice(0, limit);
+}

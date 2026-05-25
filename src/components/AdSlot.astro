@@ -1,0 +1,155 @@
+---
+// AdSlot.astro
+// Emplacement publicitaire au standard éditorial Ponyscope.
+// Philosophie : la pub doit ressembler à un encart de magazine premium,
+// pas à un bandeau Web. Toujours labellisée, jamais sticky, jamais invasive.
+//
+// Usage :
+//   <AdSlot label="Partenaire" variant="sponsor" />          (placeholder dev)
+//   <AdSlot label="Partenaire" variant="sponsor">
+//     <img src="..." alt="..." />                            (vrai contenu pub)
+//   </AdSlot>
+//
+// Comportement :
+//   - Si on passe du contenu via le slot → on l'affiche.
+//   - Si vide → placeholder visible en dev seulement (pour voir les zones).
+//   - En prod (PUBLIC_HIDE_AD_PLACEHOLDERS="1"), si vide → l'emplacement
+//     disparaît complètement (height 0, margin 0).
+
+export interface Props {
+  label?: string;            // "PARTENAIRE", "EN PARTENARIAT AVEC", etc.
+  variant?: 'sponsor' | 'discovery' | 'inline';
+  minHeight?: string;        // hauteur minimum de la zone (placeholder + ad)
+  id?: string;               // id HTML utile pour cibler ensuite (AdSense, GAM…)
+}
+
+const {
+  label = 'Partenaire',
+  variant = 'sponsor',
+  minHeight = '180px',
+  id,
+} = Astro.props;
+
+const hasContent = Astro.slots.has('default');
+
+// En production, si on veut masquer les placeholders vides
+const hidePlaceholders =
+  import.meta.env.PUBLIC_HIDE_AD_PLACEHOLDERS === '1';
+const showPlaceholder = !hasContent && !hidePlaceholders;
+const renderNothing = !hasContent && hidePlaceholders;
+---
+
+{!renderNothing && (
+  <aside
+    class={`adslot adslot--${variant}`}
+    aria-label={label}
+    data-variant={variant}
+    id={id}
+    style={`--adslot-min-height: ${minHeight};`}
+  >
+    <div class="adslot-label">
+      <span class="line"></span>
+      <span class="text">{label}</span>
+      <span class="line"></span>
+    </div>
+
+    <div class="adslot-body">
+      {hasContent && <slot />}
+      {showPlaceholder && (
+        <div class="adslot-placeholder">
+          <span class="placeholder-text">Espace publicitaire</span>
+          <span class="placeholder-meta">{variant} · {minHeight}</span>
+        </div>
+      )}
+    </div>
+  </aside>
+)}
+
+<style>
+  .adslot {
+    max-width: 860px;
+    margin: 100px auto;
+    padding: 0;
+  }
+
+  .adslot--inline {
+    margin: 60px auto;
+  }
+
+  /* === Label en haut, type "PARTENAIRE" centré avec deux filets or === */
+  .adslot-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    margin-bottom: 28px;
+  }
+  .adslot-label .line {
+    flex: 0 0 60px;
+    height: 1px;
+    background: var(--gold);
+    opacity: 0.6;
+  }
+  .adslot-label .text {
+    font-family: var(--font-sans);
+    color: var(--gold-deep);
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.32em;
+    line-height: 1;
+  }
+
+  /* === Conteneur du contenu pub === */
+  .adslot-body {
+    position: relative;
+    min-height: var(--adslot-min-height);
+    background: var(--ivory);
+    border: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  /* La pub réelle peut être n'importe quoi : image, iframe, script */
+  .adslot-body :global(img),
+  .adslot-body :global(iframe),
+  .adslot-body :global(video) {
+    max-width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  /* === Placeholder visible en dev seulement === */
+  .adslot-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    color: var(--ink-soft);
+    opacity: 0.55;
+    user-select: none;
+    pointer-events: none;
+  }
+  .placeholder-text {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 18px;
+    letter-spacing: 0.02em;
+  }
+  .placeholder-meta {
+    font-family: var(--font-sans);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.22em;
+    color: var(--gold-deep);
+    opacity: 0.7;
+  }
+
+  @media (max-width: 768px) {
+    .adslot { margin: 60px auto; }
+    .adslot-label .line { flex-basis: 32px; }
+    .adslot-label .text { font-size: 9px; letter-spacing: 0.28em; }
+  }
+</style>

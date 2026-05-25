@@ -1,0 +1,73 @@
+---
+// OrnamentDivider.astro
+// Séparateur éditorial : deux filets fins avec un symbole central optionnel.
+// Inspiration : ornements de typographie de presse (Hermès, Le Monde, Cereal).
+// Usage :
+//   <OrnamentDivider />                              (juste un filet or)
+//   <OrnamentDivider symbol="*" />                   (filet + astérisque)
+//   <OrnamentDivider symbol="◆" width="80px" />      (variantes)
+
+export interface Props {
+  symbol?: string;
+  width?: string;
+  variant?: 'gold' | 'gold-soft' | 'paper-soft';
+  align?: 'left' | 'center' | 'right';
+  marginY?: string;
+}
+
+const {
+  symbol,
+  width = '120px',
+  variant = 'gold',
+  align = 'center',
+  marginY = '32px',
+} = Astro.props;
+
+const colorByVariant: Record<string, string> = {
+  gold: 'var(--gold)',
+  'gold-soft': 'var(--gold-soft)',
+  'paper-soft': 'rgba(250, 246, 238, 0.35)',
+};
+const color = colorByVariant[variant] || colorByVariant.gold;
+
+const justifyByAlign: Record<string, string> = {
+  left: 'flex-start',
+  center: 'center',
+  right: 'flex-end',
+};
+const justify = justifyByAlign[align];
+---
+
+<div
+  class="ornament"
+  style={`--orn-color: ${color}; --orn-width: ${width}; --orn-justify: ${justify}; --orn-margin: ${marginY};`}
+>
+  <span class="line"></span>
+  {symbol && <span class="symbol">{symbol}</span>}
+  <span class="line"></span>
+</div>
+
+<style>
+  .ornament {
+    display: flex;
+    align-items: center;
+    justify-content: var(--orn-justify);
+    width: 100%;
+    margin: var(--orn-margin) 0;
+  }
+  .line {
+    flex: 0 0 var(--orn-width);
+    height: 1px;
+    background: var(--orn-color);
+    opacity: 0.7;
+  }
+  .symbol {
+    font-family: var(--font-serif);
+    color: var(--orn-color);
+    font-size: 14px;
+    font-style: italic;
+    line-height: 1;
+    padding: 0 14px;
+    transform: translateY(-1px);
+  }
+</style>

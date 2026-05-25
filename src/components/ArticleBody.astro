@@ -1,28 +1,80 @@
 ---
 // ArticleBody.astro
-// Wrap autour du contenu d'article : largeur 860px, encadrement paper,
-// drop cap gold sur 1er paragraphe, rule décorative avant chaque h2.
-// Le contenu (issu de BlocksRenderer) passe via le slot.
+// Corps de l'article : chapô, image de couverture dans le flow, contenu,
+// et deux emplacements publicitaires éditoriaux (sponsor en haut, découverte en bas).
+//
+// Layout : chaque "zone" est centrée à 860px max sur fond ivoire,
+// avec marges généreuses et aucune frame (style Cereal / Hermès).
+
+import AdSlot from './AdSlot.astro';
+import OrnamentDivider from './OrnamentDivider.astro';
 
 export interface Props {
-  excerpt?: string;        // Chapô / lede (paragraphe d'intro stylisé)
+  excerpt?: string;
+  cover?: string;
+  coverAlt?: string;
+  coverCaption?: string;
 }
 
-const { excerpt } = Astro.props;
+const { excerpt, cover, coverAlt = '', coverCaption } = Astro.props;
 ---
 
 <div class="article-wrap">
-  <div class="article">
-    <article class="article-main">
-      {excerpt && <p class="lede" set:html={excerpt}></p>}
+  <article class="article">
+
+    {/* === Chapô / lede === */}
+    {excerpt && (
+      <section class="zone zone--lede">
+        <p class="lede" set:html={excerpt}></p>
+      </section>
+    )}
+
+    {/* === Image de couverture dans le flow (taille native, pas étirée) === */}
+    {cover && (
+      <figure class="zone zone--cover">
+        <img
+          src={cover}
+          alt={coverAlt}
+          loading="eager"
+          fetchpriority="high"
+        />
+        {coverCaption && <figcaption set:html={coverCaption}></figcaption>}
+      </figure>
+    )}
+
+    {/* === Emplacement pub n°1 : "Présenté par" === */}
+    <AdSlot
+      label="En partenariat avec"
+      variant="sponsor"
+      id="ad-sponsor"
+      minHeight="160px"
+    />
+
+    {/* === Contenu de l'article === */}
+    <section class="zone zone--content">
       <div class="article-content">
         <slot />
       </div>
-    </article>
-  </div>
+    </section>
+
+    {/* === Ornement de fin de lecture === */}
+    <div class="zone zone--ornament">
+      <OrnamentDivider symbol="✦" width="40px" variant="gold" marginY="0" />
+    </div>
+
+    {/* === Emplacement pub n°2 : "Découverte" === */}
+    <AdSlot
+      label="À découvrir"
+      variant="discovery"
+      id="ad-discovery"
+      minHeight="240px"
+    />
+
+  </article>
 </div>
 
 <style>
+  /* === Wrapper global, fond papier === */
   .article-wrap {
     background-color: var(--paper);
     position: relative;
@@ -32,49 +84,81 @@ const { excerpt } = Astro.props;
     margin: 0 auto;
     padding: 120px 48px 100px;
   }
-  .article-main {
+
+  /* Toutes les "zones" partagent la même largeur max et centrage */
+  .zone {
     max-width: 860px;
     margin: 0 auto;
-    background-color: var(--paper);
-    border: 1px solid var(--line);
-    padding: 70px 72px;
   }
 
-  /* Chapô / lede */
+  /* === Chapô / lede === */
+  .zone--lede {
+    margin-bottom: 80px;
+  }
   .lede {
     font-family: var(--font-serif);
     font-weight: 400;
-    font-size: 28px;
-    line-height: 1.45;
+    font-size: 30px;
+    line-height: 1.42;
     color: var(--navy);
-    margin-bottom: 80px;
-    padding-bottom: 60px;
-    border-bottom: 1px solid var(--line);
-    letter-spacing: -0.01em;
+    letter-spacing: -0.012em;
+    text-align: left;
   }
   .lede::first-letter {
     font-family: var(--font-serif);
-    font-size: 4.5em;
+    font-size: 5em;
     float: left;
     line-height: 0.82;
-    padding: 8px 14px 0 0;
+    padding: 8px 16px 0 0;
     font-weight: 400;
     color: var(--gold);
     font-style: italic;
   }
 
-  /* Styles globaux pour le contenu rendu par BlocksRenderer */
+  /* === Cover image dans le flow === */
+  .zone--cover {
+    margin: 0 auto 80px;
+    text-align: center;
+  }
+  .zone--cover img {
+    max-width: 100%;
+    width: auto;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+    box-shadow: 0 30px 60px -30px rgba(16, 20, 47, 0.35);
+  }
+  .zone--cover figcaption {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 14px;
+    color: var(--ink-soft);
+    margin-top: 22px;
+    line-height: 1.5;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+    letter-spacing: 0.01em;
+  }
+
+  /* === Ornement de fin === */
+  .zone--ornament {
+    margin: 80px auto 0;
+    display: flex;
+    justify-content: center;
+  }
+
+  /* === Contenu (BlocksRenderer) === */
   .article-content :global(h2) {
     font-family: var(--font-serif);
     font-weight: 400;
-    font-size: 38px;
+    font-size: 40px;
     line-height: 1.15;
-    letter-spacing: -0.015em;
-    margin: 80px 0 32px;
+    letter-spacing: -0.018em;
+    margin: 80px 0 28px;
     color: var(--navy);
   }
   .article-content :global(h2 em) { font-style: italic; }
-  /* Rule décorative gold avant chaque h2 */
   .article-content :global(h2)::before {
     content: '';
     display: block;
@@ -90,14 +174,14 @@ const { excerpt } = Astro.props;
     font-size: 26px;
     line-height: 1.3;
     letter-spacing: -0.01em;
-    margin: 48px 0 20px;
+    margin: 48px 0 18px;
     color: var(--navy);
   }
 
   .article-content :global(p) {
-    margin-bottom: 24px;
+    margin-bottom: 26px;
     font-size: 18px;
-    line-height: 1.8;
+    line-height: 1.82;
     color: var(--ink-mid);
     font-weight: 400;
   }
@@ -117,14 +201,12 @@ const { excerpt } = Astro.props;
 
   .article-content :global(ul),
   .article-content :global(ol) {
-    margin: 0 0 24px 24px;
+    margin: 0 0 26px 24px;
     font-size: 18px;
-    line-height: 1.8;
+    line-height: 1.82;
     color: var(--ink-mid);
   }
-  .article-content :global(li) {
-    margin-bottom: 8px;
-  }
+  .article-content :global(li) { margin-bottom: 8px; }
 
   .article-content :global(blockquote) {
     border-left: 3px solid var(--gold);
@@ -132,30 +214,29 @@ const { excerpt } = Astro.props;
     margin: 48px 0;
     font-family: var(--font-serif);
     font-style: italic;
-    font-size: 24px;
-    line-height: 1.5;
+    font-size: 26px;
+    line-height: 1.45;
     color: var(--navy);
+    letter-spacing: -0.005em;
   }
 
   .article-content :global(img) {
     max-width: 100%;
     height: auto;
     display: block;
-    margin: 48px 0;
+    margin: 48px auto;
   }
-
   .article-content :global(figure) {
     margin: 64px 0;
   }
   .article-content :global(figcaption) {
-    font-family: var(--font-sans);
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.18em;
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 13px;
     color: var(--ink-soft);
-    margin-top: 20px;
+    margin-top: 16px;
     text-align: center;
-    font-weight: 500;
+    letter-spacing: 0.01em;
   }
 
   /* Embeds vidéo */
@@ -170,16 +251,19 @@ const { excerpt } = Astro.props;
   }
 
   @media (max-width: 768px) {
-    .article { padding: 60px 24px; }
-    .article-main { padding: 40px 24px; }
+    .article { padding: 60px 24px 80px; }
+    .lede { font-size: 22px; }
+    .lede::first-letter { font-size: 4em; padding-right: 12px; }
+    .zone--lede { margin-bottom: 60px; }
+    .zone--cover { margin: 0 auto 60px; }
+    .zone--cover figcaption { font-size: 13px; margin-top: 16px; }
     .article-content :global(h2) {
-      font-size: 28px;
+      font-size: 30px;
       margin-top: 60px;
     }
-    .lede {
-      font-size: 22px;
-      margin-bottom: 60px;
-      padding-bottom: 40px;
+    .article-content :global(blockquote) {
+      font-size: 20px;
+      padding-left: 20px;
     }
   }
 </style>
