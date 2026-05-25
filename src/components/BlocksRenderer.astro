@@ -41,6 +41,19 @@ function isYoutubeEmbedURL(url: string): boolean {
   return Boolean(url && /youtube\.com\/embed\//.test(url));
 }
 
+function giphyId(url: string): string | null {
+  if (!url) return null;
+  const m = url.match(/giphy\.com\/embed\/([a-zA-Z0-9]+)/);
+  return m ? m[1] : null;
+}
+
+// Les vieux articles WP migrés contiennent souvent des liens
+// "//giphy.com/embed/XXX" (protocol-relative) qu'on rendait jusqu'ici
+// comme du texte. Idem que YouTube : on les promeut en iframe.
+function isGiphyEmbedURL(url: string): boolean {
+  return Boolean(url && /giphy\.com\/embed\//.test(url));
+}
+
 function renderText(node: any): string {
   let html = escapeHtml(node.text || '');
   if (node.code) html = '<code>' + html + '</code>';
@@ -77,6 +90,13 @@ function renderBlock(block: any): string {
     if (ytEmbedLink) {
       const ytId = youtubeId(ytEmbedLink.url);
       return '<div class="video-embed"><iframe src="https://www.youtube.com/embed/' + ytId + '" title="YouTube video" frameborder="0" allowfullscreen></iframe></div>';
+    }
+    const giphyEmbedLink = (block.children || []).find(
+      (c: any) => c.type === 'link' && isGiphyEmbedURL(c.url || '')
+    );
+    if (giphyEmbedLink) {
+      const gifId = giphyId(giphyEmbedLink.url);
+      return '<div class="gif-embed"><iframe src="https://giphy.com/embed/' + gifId + '" title="GIF Giphy" frameborder="0" allowfullscreen></iframe></div>';
     }
     return '<p>' + renderInline(block.children || []) + '</p>';
   }
@@ -204,6 +224,23 @@ const html = blocks.map(renderBlock).join('');
     margin: 2rem 0;
   }
   .article-body :global(.video-embed iframe) {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    border-radius: 4px;
+  }
+  /* GIFs Giphy : carré par défaut (la majorité des Giphy le sont) et
+     largeur contenue pour rester dans une lecture confortable. */
+  .article-body :global(.gif-embed) {
+    position: relative;
+    width: 100%;
+    max-width: 480px;
+    aspect-ratio: 1 / 1;
+    margin: 2rem auto;
+  }
+  .article-body :global(.gif-embed iframe) {
     position: absolute;
     inset: 0;
     width: 100%;
