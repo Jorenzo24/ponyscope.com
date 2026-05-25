@@ -56,10 +56,6 @@ const {
         <span class="paper-corner paper-corner--bl" aria-hidden="true"></span>
         <span class="paper-corner paper-corner--br" aria-hidden="true"></span>
 
-        {excerpt && (
-          <p class="lede" set:html={excerpt}></p>
-        )}
-
         {cover && (
           <figure class="article-cover">
             <img
@@ -72,8 +68,14 @@ const {
           </figure>
         )}
 
-        {/* Sommaire repliable juste avant le contenu */}
+        {/* Sommaire repliable AVANT l'intro : l'œil traverse cover → sommaire → intro,
+            ce qui évite la collision visuelle entre les filets or du TOC et la
+            règle du 1er h2 (qui suivrait directement si le TOC était juste avant le contenu). */}
         <ArticleTOCInline headings={headings} />
+
+        {excerpt && (
+          <p class="lede" set:html={excerpt}></p>
+        )}
 
         <AdSlot
           label="En partenariat avec"
@@ -224,11 +226,11 @@ const {
   .article-cover figcaption {
     font-family: var(--font-serif);
     font-style: italic;
-    font-size: 13px;
+    font-size: 11px;
     color: var(--ink-soft);
-    margin-top: 18px;
+    margin-top: 14px;
     line-height: 1.5;
-    letter-spacing: 0.01em;
+    letter-spacing: 0.02em;
   }
 
   /* === Ornement en fin de contenu === */
@@ -352,11 +354,11 @@ const {
   .article-content :global(figcaption) {
     font-family: var(--font-serif);
     font-style: italic;
-    font-size: 13px;
+    font-size: 11px;
     color: var(--ink-soft);
-    margin-top: 14px;
+    margin-top: 12px;
     text-align: center;
-    letter-spacing: 0.01em;
+    letter-spacing: 0.02em;
   }
 
   .article-content :global(.video-embed) {

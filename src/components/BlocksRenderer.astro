@@ -78,6 +78,16 @@ function renderInline(children: any[]): string {
   }).join('');
 }
 
+// Heuristique "ligne de crédit image" : on capture les paragraphes courts
+// qui démarrent par Source/Crédit/Photo/Photos/Illustration/via/©/Image suivi
+// d'un séparateur (:, ·, -, —). Ces lignes sont stylées beaucoup plus petites
+// (cf. .article-credit dans le style ci-dessous).
+function isCreditLine(text: string): boolean {
+  const t = (text || '').trim();
+  if (!t || t.length > 140) return false;
+  return /^(source|cr[ée]dit|cr[ée]dits|credits|photo|photos|illustration|via|©|image)s?\s*[:·\-—]/i.test(t);
+}
+
 function renderBlock(block: any): string {
   if (block.type === 'paragraph') {
     // On ne promeut le paragraphe en embed que si on trouve une URL /embed/.
@@ -97,6 +107,10 @@ function renderBlock(block: any): string {
     if (giphyEmbedLink) {
       const gifId = giphyId(giphyEmbedLink.url);
       return '<div class="gif-embed"><iframe src="https://giphy.com/embed/' + gifId + '" title="GIF Giphy" frameborder="0" allowfullscreen></iframe></div>';
+    }
+    const plain = nodeText(block).trim();
+    if (isCreditLine(plain)) {
+      return '<p class="article-credit">' + renderInline(block.children || []) + '</p>';
     }
     return '<p>' + renderInline(block.children || []) + '</p>';
   }
@@ -168,6 +182,23 @@ const html = blocks.map(renderBlock).join('');
   .article-body :global(p) {
     margin: 1rem 0;
     line-height: 1.7;
+  }
+  /* Ligne de crédit image ("Source : Pixabay", "Photo : …", "© …", etc.) :
+     beaucoup plus petite et discrète. Marge-top négative pour la rapprocher
+     de l'image au-dessus (qui a souvent sa propre marge généreuse). */
+  .article-body :global(.article-credit) {
+    margin: -28px 0 32px;
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 11px;
+    line-height: 1.5;
+    color: var(--ink-soft);
+    text-align: center;
+    letter-spacing: 0.04em;
+  }
+  .article-body :global(.article-credit a) {
+    color: var(--ink-soft);
+    border-bottom: 1px solid rgba(191, 155, 102, 0.4);
   }
   .article-body :global(h2),
   .article-body :global(h3),
