@@ -47,10 +47,8 @@ const {
   <div class="article-shell">
     <div class="article-grid">
 
-      {/* === Sidebar gauche : sommaire === */}
-      <div class="article-toc-zone">
-        <ArticleTOC headings={headings} />
-      </div>
+      {/* === Sidebar gauche : sommaire (auto-rend son propre <aside class="toc-wrap">) === */}
+      <ArticleTOC headings={headings} />
 
       {/* === Colonne centrale : carte paper === */}
       <main class="article-main">
@@ -138,10 +136,6 @@ const {
     gap: 60px;
     justify-content: center;
     align-items: start;
-  }
-
-  .article-toc-zone {
-    align-self: start;
   }
 
   .article-aside {
@@ -349,9 +343,6 @@ const {
     }
     .article-grid {
       grid-template-columns: minmax(0, 760px);
-    }
-    .article-toc-zone {
-      display: none;
     }
     .article-aside {
       margin-top: 60px;

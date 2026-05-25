@@ -1,10 +1,14 @@
 ---
 // ArticleTOC.astro
-// Sommaire latéral gauche, sticky pendant le scroll.
-// - Liste les headings h2 (et h3 indentés) du contenu.
-// - Met en surbrillance la section en cours de lecture.
-// - Click → smooth scroll vers la section.
-// - Caché si moins de 2 entrées (pas pertinent pour des articles courts).
+// Sommaire latéral gauche en box paper + sticky-deferred :
+//   - Démarre en flux normal en haut de sa colonne
+//   - Quand son bas atteint le bas du viewport → s'épingle (position: fixed)
+//   - Quand on arrive au bas du parent (grid) → s'arrête (position: absolute)
+//
+// + scroll spy : highlight le lien correspondant au heading visible.
+// + click smooth scroll (smooth-scroll est déjà global via BaseLayout).
+//
+// Caché sous 1100px (mobile/tablet).
 
 export interface Props {
   headings: Array<{ level: number; text: string; id: string }>;
@@ -16,178 +20,221 @@ const visible = headings.length >= 2;
 ---
 
 {visible && (
-  <nav class="toc" aria-label={label}>
-    <div class="toc-label">{label}</div>
-    <ol class="toc-list">
-      {headings.map((h) => (
-        <li class={`toc-item toc-level-${h.level}`}>
-          <a class="toc-link" href={`#${h.id}`} data-target={h.id}>
-            <span class="toc-bullet"></span>
-            <span class="toc-text">{h.text}</span>
-          </a>
-        </li>
-      ))}
-    </ol>
-  </nav>
+  <aside class="toc-wrap">
+    <div class="toc" id="article-toc">
+      <div class="toc-title">{label}</div>
+      <ul>
+        {headings.map((h) => (
+          <li class={`toc-level-${h.level}`}>
+            <a href={`#${h.id}`} data-target={h.id}>{h.text}</a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </aside>
 )}
 
 <style>
-  .toc {
-    position: sticky;
-    top: 100px;
+  /* === Wrap + box === */
+  .toc-wrap {
+    position: relative;
     align-self: start;
-    max-height: calc(100vh - 140px);
-    overflow-y: auto;
-    padding-right: 8px;
-    /* Scrollbar discrète */
-    scrollbar-width: thin;
-    scrollbar-color: var(--gold-soft) transparent;
   }
-  .toc::-webkit-scrollbar { width: 4px; }
-  .toc::-webkit-scrollbar-thumb {
-    background: var(--gold-soft);
-    border-radius: 2px;
+  .toc {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    padding: 28px 22px;
+    transition: none;
+  }
+  .toc.is-pinned {
+    position: fixed;
+    width: var(--toc-width, 220px);
+  }
+  .toc.is-bottom {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
   }
 
-  .toc-label {
+  /* === Titre "SOMMAIRE" === */
+  .toc-title {
     font-family: var(--font-sans);
     font-size: 10px;
     text-transform: uppercase;
-    letter-spacing: 0.32em;
-    color: var(--gold-deep);
-    font-weight: 600;
-    margin-bottom: 24px;
-    padding-bottom: 18px;
+    letter-spacing: 0.28em;
+    color: var(--ink-soft);
+    margin-bottom: 18px;
+    padding-bottom: 14px;
     border-bottom: 1px solid var(--line);
+    font-weight: 500;
   }
 
-  .toc-list {
+  /* === Liste === */
+  .toc ul {
     list-style: none;
     margin: 0;
     padding: 0;
   }
-  .toc-item {
+  .toc li {
     margin: 0;
-    padding: 0;
-  }
-
-  .toc-link {
-    display: flex;
-    align-items: flex-start;
-    gap: 14px;
-    padding: 10px 0;
-    color: var(--ink-soft);
-    text-decoration: none;
-    font-family: var(--font-serif);
-    font-size: 14px;
+    font-size: 12.5px;
     line-height: 1.4;
-    transition: color 0.18s ease;
-    cursor: pointer;
-    letter-spacing: 0.005em;
   }
-  .toc-link:hover {
+  .toc a {
+    color: var(--ink-mid);
+    text-decoration: none;
+    display: block;
+    padding: 5px 0 5px 14px;
+    border-left: 1px solid var(--line);
+    border-bottom: none;
+    transition: color 0.25s, border-color 0.25s;
+    font-weight: 400;
+  }
+  .toc a:hover {
     color: var(--navy);
+    border-left-color: var(--line-strong);
   }
-
-  .toc-bullet {
-    flex: 0 0 1px;
-    width: 1px;
-    height: 14px;
-    background: var(--line-strong);
-    margin-top: 5px;
-    transition: background 0.2s ease, transform 0.2s ease;
-  }
-  .toc-link:hover .toc-bullet {
-    background: var(--gold);
-  }
-
-  .toc-text {
-    flex: 1;
-  }
-
-  /* Indentation pour h3 */
-  .toc-level-3 .toc-link {
-    padding-left: 22px;
-    font-size: 13px;
-    color: var(--ink-soft);
-    opacity: 0.85;
-  }
-  .toc-level-3 .toc-bullet {
-    height: 10px;
-  }
-
-  /* État actif (mis à jour par le script ci-dessous) */
-  .toc-link.is-active {
+  .toc a.is-active {
     color: var(--navy);
+    border-left-color: var(--gold);
+    border-left-width: 2px;
+    padding-left: 13px;
     font-weight: 500;
   }
-  .toc-link.is-active .toc-bullet {
-    background: var(--gold);
-    width: 2px;
-    height: 22px;
-    margin-left: -1px;
+
+  /* === h3 = sous-rubriques indentées === */
+  .toc-level-3 a {
+    padding-left: 26px;
+    font-size: 11.5px;
+    color: var(--ink-soft);
+  }
+  .toc-level-3 a.is-active {
+    padding-left: 25px;
   }
 
   @media (max-width: 1100px) {
-    .toc { display: none; }
+    .toc-wrap { display: none; }
   }
 </style>
 
 <script>
-  // Scroll spy : on observe les headings, on highlight le lien du TOC correspondant
-  // au heading le plus haut visible dans le viewport.
+  // === STICKY-DEFERRED + SCROLL SPY ===
+  // Pattern : la TOC scrolle normalement avec la page jusqu'à ce que SON BAS
+  // atteigne le bas du viewport, puis elle s'ancre. Quand on remonte au-dessus
+  // de sa position initiale, elle revient en flux normal. Quand le bas du
+  // conteneur parent est atteint, elle se pose en `position: absolute`.
   (function () {
-    const links = Array.from(
-      document.querySelectorAll<HTMLAnchorElement>('.toc-link[data-target]')
-    );
-    if (links.length === 0) return;
+    const tocWrap = document.querySelector<HTMLElement>('.toc-wrap');
+    const toc = document.getElementById('article-toc');
+    if (!tocWrap || !toc) return;
 
+    const MARGIN_BOTTOM = 30; // marge entre le bas TOC et le bas viewport quand épinglée
+
+    let wrapTop = 0;
+    let wrapWidth = 0;
+    let tocHeight = 0;
+
+    function measure() {
+      // Reset pour mesurer en flux normal
+      toc!.classList.remove('is-pinned', 'is-bottom');
+      toc!.style.width = '';
+
+      const wrapRect = tocWrap!.getBoundingClientRect();
+      wrapTop = wrapRect.top + window.scrollY;
+      wrapWidth = tocWrap!.offsetWidth;
+      tocHeight = toc!.offsetHeight;
+
+      // Réserve l'espace dans le flux quand la TOC est fixed/absolue
+      tocWrap!.style.minHeight = tocHeight + 'px';
+      toc!.style.setProperty('--toc-width', wrapWidth + 'px');
+    }
+
+    function updatePin() {
+      const scrollY = window.scrollY;
+      const vh = window.innerHeight;
+
+      const pinThreshold = wrapTop + tocHeight - vh + MARGIN_BOTTOM;
+
+      const parent = tocWrap!.parentElement;
+      if (!parent) return;
+      const parentRect = parent.getBoundingClientRect();
+      const parentBottom = parentRect.bottom + scrollY;
+      const stopThreshold = parentBottom - tocHeight;
+
+      if (scrollY < pinThreshold) {
+        // En flux normal (au-dessus du seuil d'ancrage)
+        toc!.classList.remove('is-pinned', 'is-bottom');
+        toc!.style.top = '';
+      } else if (scrollY >= stopThreshold) {
+        // On a atteint le bas du conteneur : la TOC se pose
+        toc!.classList.remove('is-pinned');
+        toc!.classList.add('is-bottom');
+        toc!.style.top = '';
+      } else {
+        // Épinglée en bas du viewport
+        toc!.classList.add('is-pinned');
+        toc!.classList.remove('is-bottom');
+        toc!.style.top = vh - tocHeight - MARGIN_BOTTOM + 'px';
+      }
+    }
+
+    // === Scroll spy ===
+    const links = Array.from(
+      toc.querySelectorAll<HTMLAnchorElement>('a[data-target]')
+    );
     const targets = links
       .map((link) => {
-        const id = link.getAttribute('data-target') || '';
+        const id = link.dataset.target || '';
         const el = document.getElementById(id);
         return el ? { id, link, el } : null;
       })
-      .filter((x): x is { id: string; link: HTMLAnchorElement; el: HTMLElement } => x !== null);
+      .filter(
+        (x): x is { id: string; link: HTMLAnchorElement; el: HTMLElement } =>
+          x !== null
+      );
 
-    if (targets.length === 0) return;
-
-    let currentId: string | null = null;
-    const setActive = (id: string | null) => {
-      if (id === currentId) return;
-      currentId = id;
-      for (const t of targets) {
-        t.link.classList.toggle('is-active', t.id === id);
-      }
-    };
-
-    const updateActive = () => {
-      // On choisit le heading dont le top a passé une marge de 30% de viewport.
+    let currentActiveId: string | null = null;
+    function updateSpy() {
       const offset = window.innerHeight * 0.3;
       let activeId: string | null = null;
       for (const t of targets) {
         const rect = t.el.getBoundingClientRect();
-        if (rect.top - offset <= 0) {
-          activeId = t.id;
-        } else {
-          break;
+        if (rect.top - offset <= 0) activeId = t.id;
+        else break;
+      }
+      if (activeId !== currentActiveId) {
+        currentActiveId = activeId;
+        for (const t of targets) {
+          t.link.classList.toggle('is-active', t.id === activeId);
         }
       }
-      setActive(activeId);
-    };
+    }
 
+    // rAF throttle pour scroll & resize
     let rafScheduled = false;
-    const onScroll = () => {
+    function onTick() {
       if (rafScheduled) return;
       rafScheduled = true;
       requestAnimationFrame(() => {
         rafScheduled = false;
-        updateActive();
+        updatePin();
+        updateSpy();
       });
-    };
+    }
 
-    window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', onScroll, { passive: true });
-    updateActive();
+    measure();
+    updatePin();
+    updateSpy();
+
+    window.addEventListener('scroll', onTick, { passive: true });
+    window.addEventListener(
+      'resize',
+      () => {
+        measure();
+        updatePin();
+        updateSpy();
+      },
+      { passive: true }
+    );
   })();
 </script>
