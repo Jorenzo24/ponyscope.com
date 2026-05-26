@@ -71,17 +71,14 @@ const initials = (name || '')
 
 <style>
   .author-card {
-    position: sticky;
-    top: 100px;
     text-align: center;
-    padding: 32px 20px 26px;
-    /* Box ivory-warm + ombre douce → cohérence avec le sommaire qui est en
-       boîte aussi (les deux "encarts éditoriaux" partagent le même langage). */
-    background: var(--ivory-warm);
-    border-radius: 4px;
-    box-shadow:
-      0 1px 0 rgba(16, 20, 47, 0.04),
-      0 14px 30px -22px rgba(16, 20, 47, 0.20);
+    padding: 32px 22px 30px;
+    /* Box blanche avec bord gold-soft : franche démarcation du paper de
+       l'article, finition "carte de visite". */
+    background: #FFFFFF;
+    border: 1px solid rgba(191, 155, 102, 0.4);
+    border-radius: 8px;
+    box-shadow: 0 10px 28px -18px rgba(16, 20, 47, 0.14);
   }
 
   /* === Portrait : avatar circulaire dans un cadre blanc, ombre stratifiée ===
@@ -174,14 +171,14 @@ const initials = (name || '')
      Encadrée par des guillemets français gold en pseudo-éléments — donne
      une voix de "punchline d'auteur" sans alourdir le balisage. */
   .author-bio {
-    margin: 14px auto 0;
+    margin: 16px auto 0;
     font-family: var(--font-serif);
     font-style: italic;
-    font-size: 13px;
-    line-height: 1.55;
+    font-size: 15px;
+    line-height: 1.5;
     color: var(--ink-mid);
     letter-spacing: 0.005em;
-    max-width: 90%;
+    max-width: 96%;
   }
   .author-bio::before {
     content: '« ';
@@ -197,13 +194,12 @@ const initials = (name || '')
   }
   .author-bio :global(em) { font-style: normal; } /* nested em devient roman */
 
-  /* En dessous de 1100px, la sidebar disparaît dans le flow mobile → on
-     enlève le sticky et on réduit le padding. */
+  /* En dessous de 1100px, la card passe en flow mobile sous l'article. */
   @media (max-width: 1100px) {
     .author-card {
-      position: static;
-      top: auto;
-      padding: 0;
+      padding: 28px 24px 26px;
+      max-width: 420px;
+      margin: 0 auto;
     }
     .author-portrait {
       width: 96px;
