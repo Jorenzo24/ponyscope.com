@@ -13,6 +13,7 @@ import {
   getCategoryTree,
   prettyCategoryName,
   getArticleBreadcrumb,
+  isHiddenArticle,
 } from '../lib/strapi.js';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Nav from '../components/Nav.astro';
@@ -105,8 +106,12 @@ const { kind } = Astro.props;
         })
       : undefined;
 
-    const categoryName = article.primaryCategory?.name;
-    const breadcrumb = getArticleBreadcrumb(article);
+    // Articles "cachés" (catégorie secret) : on n'expose ni la catégorie ni
+    // le breadcrumb (qui pointerait vers une page catégorie qu'on ne génère
+    // plus), et on force noindex même quand le noindex global sera levé.
+    const isHidden = isHiddenArticle(article);
+    const categoryName = isHidden ? undefined : article.primaryCategory?.name;
+    const breadcrumb = isHidden ? [] : getArticleBreadcrumb(article);
 
     // Image de cover
     const coverURL = article.cover?.url ? mediaURL(article.cover.url) : undefined;
@@ -145,7 +150,7 @@ const { kind } = Astro.props;
         description={metaDescription}
         canonicalURL={canonical || undefined}
         ogImage={ogImage}
-        noindex={true}
+        noindex={true /* global pendant le dev ; au go-live, remplacer par : isHidden || article.seo?.metaRobots === 'noindex' */}
       >
         <Nav slot="nav" />
 

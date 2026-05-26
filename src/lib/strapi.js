@@ -5,6 +5,31 @@
 const STRAPI_URL = import.meta.env.PUBLIC_STRAPI_URL || 'https://cms.ponyscope.com';
 
 /**
+ * Catégorie cachée : ses articles existent dans Strapi mais le site ne doit
+ * jamais les exposer (ni page catégorie, ni breadcrumb, ni listing). Les pages
+ * articles individuelles restent générées mais forcées en noindex.
+ *
+ * Le slug est volontairement opaque pour éviter toute collision accidentelle.
+ */
+export const HIDDEN_CATEGORY_SLUG =
+  'vju86y7r5687ita7r0uv3lart1clebatar456tyt657hgt67ygfdtyrtuk67iuyguft7dfuydr';
+
+/**
+ * Indique si un article appartient à la catégorie cachée (à n'importe quel
+ * niveau de la chaîne primaryCategory.parent).
+ * @param {object} article
+ * @returns {boolean}
+ */
+export function isHiddenArticle(article) {
+  let cur = article?.primaryCategory;
+  while (cur && cur.slug) {
+    if (cur.slug === HIDDEN_CATEGORY_SLUG) return true;
+    cur = cur.parent;
+  }
+  return false;
+}
+
+/**
  * Fait un GET sur l'API Strapi et renvoie le JSON.
  * @param {string} path  Chemin commençant par /api/...
  * @returns {Promise<any>}
@@ -205,6 +230,8 @@ export function getCategoryTree(articles) {
   for (const article of articles) {
     const cat = article?.primaryCategory;
     if (!cat || !cat.slug) continue;
+    // Catégorie cachée : ne PAS générer de page catégorie pour ses articles.
+    if (isHiddenArticle(article)) continue;
 
     // Walk up parent chain (Strapi populate : parent → grand-parent).
     // chain[0] = catégorie racine, chain[chain.length-1] = catégorie de l'article

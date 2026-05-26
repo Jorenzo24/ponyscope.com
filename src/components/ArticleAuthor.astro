@@ -51,50 +51,48 @@ const initials = (name || '')
       )}
     </div>
 
-    <div class="author-divider" aria-hidden="true">
-      <span class="author-divider-line"></span>
-      <span class="author-divider-mark">✦</span>
-      <span class="author-divider-line"></span>
+    <div class="author-content">
+      <div class="author-eyebrow">{role}</div>
+
+      {href ? (
+        <a class="author-name" href={href}>{name}</a>
+      ) : (
+        <span class="author-name">{name}</span>
+      )}
+
+      {bio && <p class="author-bio" set:html={bio}></p>}
     </div>
-
-    <div class="author-eyebrow">{role}</div>
-
-    {href ? (
-      <a class="author-name" href={href}>{name}</a>
-    ) : (
-      <span class="author-name">{name}</span>
-    )}
-
-    {bio && <p class="author-bio" set:html={bio}></p>}
   </aside>
 )}
 
 <style>
+  /* === Carte rédacteur : fond navy + layout horizontal (avatar | contenu) ===
+     Marge-top pour se détacher du hero (qui est lui aussi navy → la séparation
+     se fait par le radius + l'ombre, pas par contraste de couleur). */
   .author-card {
-    text-align: center;
-    padding: 32px 22px 30px;
-    /* Box blanche avec bord gold-soft : franche démarcation du paper de
-       l'article, finition "carte de visite". */
-    background: #FFFFFF;
-    border: 1px solid rgba(191, 155, 102, 0.4);
+    margin-top: 36px;
+    padding: 18px 18px;
+    background: var(--navy);
+    border: 1px solid rgba(191, 155, 102, 0.35);
     border-radius: 8px;
-    box-shadow: 0 10px 28px -18px rgba(16, 20, 47, 0.14);
+    color: var(--paper);
+    box-shadow: 0 10px 28px -18px rgba(16, 20, 47, 0.40);
+    display: flex;
+    align-items: center;
+    gap: 14px;
   }
 
-  /* === Portrait : avatar circulaire dans un cadre blanc, ombre stratifiée ===
-     Cadre à 2 niveaux : ring or 1px à l'extérieur + bord blanc 6px à l'intérieur
-     → fini "miniature encadrée" plus distinctif que le simple cadre blanc. */
+  /* === Avatar = vignette ronde encadrée blanc + ring or === */
   .author-portrait {
-    margin: 0 auto 22px;
-    width: 112px;
-    height: 112px;
-    padding: 6px;
+    flex: 0 0 68px;
+    width: 68px;
+    height: 68px;
+    padding: 4px;
     background: #FFFFFF;
     border-radius: 50%;
     box-shadow:
-      0 0 0 1px rgba(191, 155, 102, 0.55),
-      0 4px 12px -4px rgba(16, 20, 47, 0.18),
-      0 16px 36px -12px rgba(16, 20, 47, 0.35);
+      0 0 0 1px rgba(191, 155, 102, 0.6),
+      0 6px 14px -6px rgba(0, 0, 0, 0.35);
   }
 
   .author-avatar {
@@ -112,43 +110,30 @@ const initials = (name || '')
     justify-content: center;
     font-family: var(--font-serif);
     font-style: italic;
-    font-size: 38px;
+    font-size: 24px;
     color: var(--gold-deep);
     border: 1px solid var(--gold-soft);
     filter: none;
     background: var(--paper);
   }
 
-  /* === Filet or avec étoile centrale === */
-  .author-divider {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    margin: 0 auto 16px;
-    width: 78%;
-  }
-  .author-divider-line {
+  /* === Contenu à droite de l'avatar === */
+  .author-content {
     flex: 1;
-    height: 1px;
-    background: var(--gold);
-    opacity: 0.55;
-  }
-  .author-divider-mark {
-    color: var(--gold);
-    font-size: 11px;
-    line-height: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
   }
 
   /* === Eyebrow gold uppercase === */
   .author-eyebrow {
     font-family: var(--font-sans);
-    font-size: 10px;
+    font-size: 9px;
     text-transform: uppercase;
-    letter-spacing: 0.34em;
-    color: var(--gold-deep);
+    letter-spacing: 0.30em;
+    color: var(--gold-soft);
     font-weight: 600;
-    margin-bottom: 14px;
   }
 
   /* === Nom italique Cormorant === */
@@ -157,28 +142,27 @@ const initials = (name || '')
     font-family: var(--font-serif);
     font-style: italic;
     font-weight: 400;
-    font-size: 22px;
+    font-size: 18px;
     line-height: 1.2;
-    color: var(--navy);
+    color: var(--paper);
     text-decoration: none;
     border: none;
     letter-spacing: -0.005em;
   }
   a.author-name { transition: color 0.2s; }
-  a.author-name:hover { color: var(--gold-deep); }
+  a.author-name:hover { color: var(--gold-soft); }
 
   /* === Bio = phrase courte / punchline ===
-     Encadrée par des guillemets français gold en pseudo-éléments — donne
-     une voix de "punchline d'auteur" sans alourdir le balisage. */
+     Sous le nom, en italique paper opacité réduite. Guillemets gold en
+     pseudo-éléments. */
   .author-bio {
-    margin: 16px auto 0;
+    margin: 6px 0 0;
     font-family: var(--font-serif);
     font-style: italic;
-    font-size: 15px;
-    line-height: 1.5;
-    color: var(--ink-mid);
+    font-size: 13px;
+    line-height: 1.4;
+    color: rgba(250, 246, 238, 0.72);
     letter-spacing: 0.005em;
-    max-width: 96%;
   }
   .author-bio::before {
     content: '« ';
@@ -192,18 +176,21 @@ const initials = (name || '')
     font-style: normal;
     font-weight: 500;
   }
-  .author-bio :global(em) { font-style: normal; } /* nested em devient roman */
+  .author-bio :global(em) { font-style: normal; }
 
-  /* En dessous de 1100px, la card passe en flow mobile sous l'article. */
+  /* En dessous de 1100px : la card passe en flow mobile sous l'article. */
   @media (max-width: 1100px) {
     .author-card {
-      padding: 28px 24px 26px;
-      max-width: 420px;
+      max-width: 460px;
       margin: 0 auto;
+      padding: 22px 20px;
     }
     .author-portrait {
-      width: 96px;
-      height: 96px;
+      flex: 0 0 76px;
+      width: 76px;
+      height: 76px;
     }
+    .author-name { font-size: 19px; }
+    .author-bio { font-size: 14px; }
   }
 </style>
