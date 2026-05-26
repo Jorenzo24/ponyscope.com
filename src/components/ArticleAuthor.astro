@@ -51,48 +51,54 @@ const initials = (name || '')
       )}
     </div>
 
-    <div class="author-content">
-      <div class="author-eyebrow">{role}</div>
-
-      {href ? (
-        <a class="author-name" href={href}>{name}</a>
-      ) : (
-        <span class="author-name">{name}</span>
-      )}
-
-      {bio && <p class="author-bio" set:html={bio}></p>}
+    <div class="author-divider" aria-hidden="true">
+      <span class="author-divider-line"></span>
+      <span class="author-divider-mark">✦</span>
+      <span class="author-divider-line"></span>
     </div>
+
+    <div class="author-eyebrow">{role}</div>
+
+    {href ? (
+      <a class="author-name" href={href}>{name}</a>
+    ) : (
+      <span class="author-name">{name}</span>
+    )}
+
+    {bio && <p class="author-bio" set:html={bio}></p>}
+
+    <div class="author-tail" aria-hidden="true"></div>
   </aside>
 )}
 
 <style>
-  /* === Carte rédacteur : fond navy + layout horizontal (avatar | contenu) ===
-     Marge-top pour se détacher du hero (qui est lui aussi navy → la séparation
-     se fait par le radius + l'ombre, pas par contraste de couleur). */
+  /* === Frontispice rédacteur ===
+     Pas de box / pas de fond / pas de bordure. La carte est une composition
+     typographique centrée, ancrée par un portrait carré encadré façon
+     "tirage matté" (cohérent avec les images d'article). Le bloc texte
+     descend en cascade : ornement gold → eyebrow → nom italique → bio.
+     Un petit ornement de pied (✦) referme la composition. */
   .author-card {
-    margin-top: 36px;
-    padding: 18px 18px;
-    background: var(--navy);
-    border: 1px solid rgba(191, 155, 102, 0.35);
-    border-radius: 8px;
-    color: var(--paper);
-    box-shadow: 0 10px 28px -18px rgba(16, 20, 47, 0.40);
-    display: flex;
-    align-items: center;
-    gap: 14px;
+    margin-top: 40px;
+    text-align: center;
+    padding: 0;
   }
 
-  /* === Avatar = vignette ronde encadrée blanc + ring or === */
+  /* === Portrait carré façon tirage matté ===
+     180×180 (presque toute la largeur du 220px column). Bord blanc 8px +
+     ring or 1px + ombre stratifiée. Coins légèrement arrondis (4px) pour
+     adoucir sans virer au médaillon. */
   .author-portrait {
-    flex: 0 0 68px;
-    width: 68px;
-    height: 68px;
-    padding: 4px;
+    margin: 0 auto 24px;
+    width: 180px;
+    height: 180px;
+    padding: 8px;
     background: #FFFFFF;
-    border-radius: 50%;
+    border-radius: 4px;
     box-shadow:
-      0 0 0 1px rgba(191, 155, 102, 0.6),
-      0 6px 14px -6px rgba(0, 0, 0, 0.35);
+      0 0 0 1px rgba(191, 155, 102, 0.5),
+      0 4px 12px -4px rgba(16, 20, 47, 0.18),
+      0 22px 44px -16px rgba(16, 20, 47, 0.35);
   }
 
   .author-avatar {
@@ -100,7 +106,7 @@ const initials = (name || '')
     width: 100%;
     height: 100%;
     object-fit: cover;
-    border-radius: 50%;
+    border-radius: 2px;
     background: var(--ivory-warm);
     filter: saturate(0.9) sepia(0.06) contrast(1.03);
   }
@@ -110,59 +116,75 @@ const initials = (name || '')
     justify-content: center;
     font-family: var(--font-serif);
     font-style: italic;
-    font-size: 24px;
+    font-size: 56px;
     color: var(--gold-deep);
     border: 1px solid var(--gold-soft);
     filter: none;
     background: var(--paper);
   }
 
-  /* === Contenu à droite de l'avatar === */
-  .author-content {
-    flex: 1;
-    min-width: 0;
+  /* === Filet or + ✦ central, comme une signature ouverte sous le portrait === */
+  .author-divider {
     display: flex;
-    flex-direction: column;
-    gap: 2px;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin: 0 auto 14px;
+    width: 72%;
+  }
+  .author-divider-line {
+    flex: 1;
+    height: 1px;
+    background: var(--gold);
+    opacity: 0.55;
+  }
+  .author-divider-mark {
+    color: var(--gold);
+    font-size: 11px;
+    line-height: 1;
   }
 
-  /* === Eyebrow gold uppercase === */
+  /* === Eyebrow gold uppercase ===
+     Tracking serré, taille minimale (9px) : ça donne la respiration éditoriale
+     "petit cartouche de chapitre". */
   .author-eyebrow {
     font-family: var(--font-sans);
     font-size: 9px;
     text-transform: uppercase;
-    letter-spacing: 0.30em;
-    color: var(--gold-soft);
+    letter-spacing: 0.34em;
+    color: var(--gold-deep);
     font-weight: 600;
+    margin-bottom: 8px;
   }
 
-  /* === Nom italique Cormorant === */
+  /* === Nom italique Cormorant, gros, navy === */
   .author-name {
     display: block;
     font-family: var(--font-serif);
     font-style: italic;
     font-weight: 400;
-    font-size: 18px;
-    line-height: 1.2;
-    color: var(--paper);
+    font-size: 22px;
+    line-height: 1.18;
+    color: var(--navy);
     text-decoration: none;
     border: none;
     letter-spacing: -0.005em;
+    margin-bottom: 14px;
   }
   a.author-name { transition: color 0.2s; }
-  a.author-name:hover { color: var(--gold-soft); }
+  a.author-name:hover { color: var(--gold-deep); }
 
   /* === Bio = phrase courte / punchline ===
-     Sous le nom, en italique paper opacité réduite. Guillemets gold en
-     pseudo-éléments. */
+     Italique gris, guillemets gold en pseudo-éléments. */
   .author-bio {
-    margin: 6px 0 0;
+    margin: 0 auto;
     font-family: var(--font-serif);
     font-style: italic;
-    font-size: 13px;
-    line-height: 1.4;
-    color: rgba(250, 246, 238, 0.72);
+    font-size: 13.5px;
+    line-height: 1.5;
+    color: var(--ink-mid);
     letter-spacing: 0.005em;
+    max-width: 92%;
   }
   .author-bio::before {
     content: '« ';
@@ -178,19 +200,25 @@ const initials = (name || '')
   }
   .author-bio :global(em) { font-style: normal; }
 
-  /* En dessous de 1100px : la card passe en flow mobile sous l'article. */
+  /* === Pied : petite étoile or pour fermer la composition ===
+     Affichée comme un ::before parce qu'on veut juste un caractère décoratif. */
+  .author-tail {
+    margin: 18px auto 0;
+    height: 8px;
+    color: var(--gold);
+    font-size: 10px;
+    line-height: 1;
+    opacity: 0.7;
+  }
+  .author-tail::before {
+    content: '✦';
+  }
+
+  /* === Mobile : on passe la carte en flow centré, max 320px === */
   @media (max-width: 1100px) {
     .author-card {
-      max-width: 460px;
       margin: 0 auto;
-      padding: 22px 20px;
+      max-width: 320px;
     }
-    .author-portrait {
-      flex: 0 0 76px;
-      width: 76px;
-      height: 76px;
-    }
-    .author-name { font-size: 19px; }
-    .author-bio { font-size: 14px; }
   }
 </style>
