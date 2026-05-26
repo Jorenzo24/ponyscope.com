@@ -65,7 +65,7 @@ const { kind } = Astro.props;
 {kind === 'category' && (
   (() => {
     const { category } = Astro.props as { category: any };
-    const catName = prettyCategoryName(category.slug);
+    const catName = category.name || prettyCategoryName(category.slug);
     const metaTitle = `${catName} — Ponyscope`;
     const metaDescription = `Tous les articles Ponyscope dans la catégorie ${catName}.`;
     return (

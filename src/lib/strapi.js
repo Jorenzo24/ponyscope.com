@@ -183,61 +183,73 @@ export function getArticleBreadcrumb(article) {
 }
 
 /**
- * Construit l'arbre des catégories à partir des canonicalURLs des articles.
- * Les ancêtres d'un article (chaque segment de l'URL sauf le dernier) sont
- * considérés comme des catégories qui contiennent cet article.
+ * Construit l'arbre des catégories à partir du `primaryCategory` Strapi de
+ * chaque article (et de sa chaîne de parents).
  *
- * Exemple : un article à `/blog/tops-cheval/foo` est rattaché aux catégories
- * `/blog` ET `/blog/tops-cheval` (parents inclusifs).
+ * Bug précédent : on dérivait les catégories des segments de canonicalURL,
+ * mais comme tous les articles ont une URL `/blog/<slug>` (plate, héritée du
+ * WP), tous se retrouvaient rangés sous /blog et nulle part ailleurs. La
+ * source de vérité est désormais `primaryCategory` qui a sa propre
+ * hiérarchie (parent → grand-parent, peuplée jusqu'à 3 niveaux).
+ *
+ * Un article dont primaryCategory = "tops-cheval" (parent : "tops") apparaît
+ * à la fois sur `/tops` ET sur `/tops/tops-cheval` (héritage ascendant).
  *
  * @param {Array<object>} articles
- * @returns {Map<string, {path:string, slug:string, articles:Array, subcategories:string[]}>}
+ * @returns {Map<string, {path:string, slug:string, name:string, articles:Array, subcategories:string[]}>}
  */
 export function getCategoryTree(articles) {
   const map = new Map();
   if (!Array.isArray(articles)) return map;
 
   for (const article of articles) {
-    const url = article?.seo?.canonicalURL;
-    if (!url) continue;
-    let pathname;
-    try {
-      const u = new URL(url);
-      pathname = u.pathname.replace(/^\/+|\/+$/g, '');
-    } catch {
-      continue;
-    }
-    const segs = pathname.split('/').filter(Boolean);
-    if (segs.length < 2) continue; // pas d'ancêtre (juste un slug racine)
+    const cat = article?.primaryCategory;
+    if (!cat || !cat.slug) continue;
 
-    // Pour chaque niveau ancestral, on attache l'article
-    for (let i = 1; i < segs.length; i++) {
-      const catPath = '/' + segs.slice(0, i).join('/');
-      if (!map.has(catPath)) {
-        map.set(catPath, {
-          path: catPath,
-          slug: segs[i - 1],
+    // Walk up parent chain (Strapi populate : parent → grand-parent).
+    // chain[0] = catégorie racine, chain[chain.length-1] = catégorie de l'article
+    const chain = [];
+    let cur = cat;
+    while (cur && cur.slug) {
+      chain.unshift({ slug: cur.slug, name: cur.name || prettyCategoryName(cur.slug) });
+      cur = cur.parent;
+    }
+    if (chain.length === 0) continue;
+
+    // Rattache l'article à CHAQUE niveau de la chaîne (ancêtres inclusifs)
+    for (let i = 0; i < chain.length; i++) {
+      const path = '/' + chain.slice(0, i + 1).map((c) => c.slug).join('/');
+      if (!map.has(path)) {
+        map.set(path, {
+          path,
+          slug: chain[i].slug,
+          name: chain[i].name,
           articles: [],
           subcategoryPaths: new Set(),
         });
       }
-      map.get(catPath).articles.push(article);
-      // Le niveau suivant (s'il existe ET n'est pas le dernier seg = slug article)
-      // est une sous-catégorie directe
-      if (i + 1 < segs.length) {
-        const subPath = '/' + segs.slice(0, i + 1).join('/');
-        map.get(catPath).subcategoryPaths.add(subPath);
+      map.get(path).articles.push(article);
+      if (i + 1 < chain.length) {
+        const childPath = '/' + chain.slice(0, i + 2).map((c) => c.slug).join('/');
+        map.get(path).subcategoryPaths.add(childPath);
       }
     }
   }
 
-  // Tri articles par date desc + transforme subcategoryPaths en tableau trié
+  // Dédup (un article peut apparaître plusieurs fois si on l'ajoute au même
+  // bucket via plusieurs chemins — peu probable mais on protège) + tri + finalise
   const byDateDesc = (a, b) => {
     const da = new Date(a.originalPublishedAt || a.publishedAt || 0).getTime();
     const db = new Date(b.originalPublishedAt || b.publishedAt || 0).getTime();
     return db - da;
   };
   for (const cat of map.values()) {
+    const seen = new Set();
+    cat.articles = cat.articles.filter((a) => {
+      if (seen.has(a.id)) return false;
+      seen.add(a.id);
+      return true;
+    });
     cat.articles.sort(byDateDesc);
     cat.subcategories = [...cat.subcategoryPaths].sort();
     delete cat.subcategoryPaths;

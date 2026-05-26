@@ -14,13 +14,14 @@ export interface Props {
   category: {
     path: string;
     slug: string;
+    name?: string;
     articles: any[];
     subcategories: string[];
   };
 }
 
 const { category } = Astro.props;
-const name = prettyCategoryName(category.slug);
+const name = category.name || prettyCategoryName(category.slug);
 const count = category.articles.length;
 
 // Breadcrumbs : on découpe le path en segments
