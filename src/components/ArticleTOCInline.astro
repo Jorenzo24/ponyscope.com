@@ -47,6 +47,12 @@ const items = headings.map((h) => {
       </span>
     </summary>
 
+    <div class="toc-inline-divider" aria-hidden="true">
+      <span></span>
+      <span class="toc-inline-divider-mark">✦</span>
+      <span></span>
+    </div>
+
     <ol class="toc-inline-list">
       {items.map((h) => (
         <li class={`toc-inline-item toc-inline-item--h${h.level}`}>
@@ -61,13 +67,16 @@ const items = headings.map((h) => {
 )}
 
 <style>
-  /* Conteneur : 2 filets or top/bottom, fond transparent → la paper card
-     reste visible derrière. Marges généreuses pour aérer entre cover et contenu. */
+  /* Conteneur : boîte ivory-warm pour se démarquer du paper du contenu.
+     Ombre douce + border-radius pour un effet "carte posée". */
   .toc-inline {
     margin: 0 0 60px;
-    border-top: 1px solid var(--gold);
-    border-bottom: 1px solid var(--gold);
-    padding: 22px 0;
+    background: var(--ivory-warm);
+    border-radius: 4px;
+    padding: 26px 36px;
+    box-shadow:
+      0 1px 0 rgba(16, 20, 47, 0.04),
+      0 14px 30px -22px rgba(16, 20, 47, 0.20);
   }
   /* Cache la flèche native du <details> */
   .toc-inline summary::-webkit-details-marker { display: none; }
@@ -118,29 +127,43 @@ const items = headings.map((h) => {
     transform: rotate(180deg);
   }
 
-  /* === Liste dépliée ===
-     2 colonnes sur desktop pour compacter les Top 10. */
+  /* === Ornement décoratif sous le summary (visible quand ouvert) === */
+  .toc-inline-divider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin: 22px auto 18px;
+    width: 60%;
+  }
+  .toc-inline-divider > span:not(.toc-inline-divider-mark) {
+    flex: 1;
+    height: 1px;
+    background: var(--gold);
+    opacity: 0.55;
+  }
+  .toc-inline-divider-mark {
+    color: var(--gold);
+    font-size: 11px;
+    line-height: 1;
+  }
+
+  /* === Liste dépliée — 1 SEULE colonne pour la clarté de lecture. */
   .toc-inline-list {
     list-style: none;
-    margin: 28px 0 6px;
+    margin: 4px 0 0;
     padding: 0;
-    column-count: 2;
-    column-gap: 56px;
-  }
-  @media (max-width: 700px) {
-    .toc-inline-list { column-count: 1; column-gap: 0; }
   }
 
   .toc-inline-item {
-    break-inside: avoid;
     margin: 0;
     padding: 0;
   }
   .toc-inline-item a {
     display: flex;
     align-items: baseline;
-    gap: 16px;
-    padding: 10px 0;
+    gap: 18px;
+    padding: 11px 0;
     color: var(--navy);
     text-decoration: none;
     border: none;
@@ -153,15 +176,15 @@ const items = headings.map((h) => {
     flex: 0 0 auto;
     font-family: var(--font-serif);
     font-style: italic;
-    font-size: 19px;
+    font-size: 20px;
     color: var(--gold-deep);
     letter-spacing: 0;
     line-height: 1;
-    min-width: 30px;
+    min-width: 32px;
   }
   .toc-text {
     font-family: var(--font-serif);
-    font-size: 16px;
+    font-size: 17px;
     line-height: 1.4;
     color: var(--navy);
   }
@@ -187,11 +210,11 @@ const items = headings.map((h) => {
   }
 
   @media (max-width: 768px) {
-    .toc-inline { margin: 0 0 44px; padding: 18px 0; }
+    .toc-inline { margin: 0 0 44px; padding: 20px 22px; }
     .toc-summary { flex-wrap: wrap; gap: 8px; }
     .toc-summary-meta { font-size: 14px; }
-    .toc-inline-list { margin-top: 20px; }
-    .toc-num { font-size: 17px; min-width: 26px; }
+    .toc-inline-list { margin-top: 6px; }
+    .toc-num { font-size: 18px; min-width: 28px; }
     .toc-text { font-size: 15px; }
   }
 </style>

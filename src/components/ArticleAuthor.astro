@@ -1,22 +1,28 @@
 ---
 // ArticleAuthor.astro
-// Encart auteur en sidebar droite : avatar + nom + rôle + bio courte.
-// Style éditorial : sur fond ivoire, séparé par un filet gold en haut.
+// Boîte rédacteur en sidebar gauche, design "frontispice vertical" :
+//   - Avatar circulaire 112px avec liseré blanc + ombre stratifiée (cohérence
+//     avec le traitement des images d'article).
+//   - Filet or + petite étoile (✦) en séparateur décoratif.
+//   - Eyebrow gold uppercase "RÉDACTEUR" (ou rôle passé en prop).
+//   - Nom italique Cormorant en gros, centré.
+//
+// Contenu volontairement minimal (pas de bio) — la richesse est dans la
+// composition visuelle. Position sticky pour suivre la lecture.
 //
 // L'avatarURL doit être déjà absolu (résolu par le parent via mediaURL).
 
 export interface Props {
   name?: string;
   role?: string;
-  bio?: string;
+  bio?: string;          // ignoré (compat backwards) — le design est volontairement sans bio
   avatarURL?: string;
-  href?: string;          // lien vers la page auteur (optionnel)
+  href?: string;
 }
 
 const {
   name,
   role = 'Rédacteur',
-  bio,
   avatarURL,
   href,
 } = Astro.props;
@@ -33,67 +39,63 @@ const initials = (name || '')
 ---
 
 {visible && (
-  <aside class="author-card" aria-label={`À propos de ${name}`}>
-    <div class="author-label">À propos</div>
-
-    <div class="author-head">
+  <aside class="author-card" aria-label={`Rédacteur : ${name}`}>
+    <div class="author-portrait">
       {avatarURL ? (
-        <img
-          class="author-avatar"
-          src={avatarURL}
-          alt={name}
-          loading="lazy"
-        />
+        <img class="author-avatar" src={avatarURL} alt={name} loading="lazy" />
       ) : (
         <div class="author-avatar author-avatar--placeholder" aria-hidden="true">
           {initials}
         </div>
       )}
-
-      <div class="author-meta">
-        {href ? (
-          <a class="author-name" href={href}>{name}</a>
-        ) : (
-          <span class="author-name">{name}</span>
-        )}
-        {role && <span class="author-role">{role}</span>}
-      </div>
     </div>
 
-    {bio && <p class="author-bio" set:html={bio}></p>}
+    <div class="author-divider" aria-hidden="true">
+      <span class="author-divider-line"></span>
+      <span class="author-divider-mark">✦</span>
+      <span class="author-divider-line"></span>
+    </div>
+
+    <div class="author-eyebrow">{role}</div>
+
+    {href ? (
+      <a class="author-name" href={href}>{name}</a>
+    ) : (
+      <span class="author-name">{name}</span>
+    )}
   </aside>
 )}
 
 <style>
   .author-card {
-    padding-top: 18px;
-    border-top: 1px solid var(--line);
+    position: sticky;
+    top: 100px;
+    text-align: center;
+    padding: 24px 8px 24px;
   }
 
-  .author-label {
-    font-family: var(--font-sans);
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.32em;
-    color: var(--gold-deep);
-    font-weight: 600;
-    margin-bottom: 22px;
-  }
-
-  .author-head {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    margin-bottom: 18px;
+  /* === Portrait : avatar circulaire dans un cadre blanc, ombre stratifiée ===
+     Cohérence avec le traitement "tirage matté" appliqué aux images d'article. */
+  .author-portrait {
+    margin: 0 auto 22px;
+    width: 112px;
+    height: 112px;
+    padding: 6px;
+    background: #FFFFFF;
+    border-radius: 50%;
+    box-shadow:
+      0 4px 12px -4px rgba(16, 20, 47, 0.18),
+      0 16px 36px -12px rgba(16, 20, 47, 0.35);
   }
 
   .author-avatar {
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
+    display: block;
+    width: 100%;
+    height: 100%;
     object-fit: cover;
+    border-radius: 50%;
     background: var(--ivory-warm);
-    flex: 0 0 56px;
+    filter: saturate(0.9) sepia(0.06) contrast(1.03);
   }
   .author-avatar--placeholder {
     display: inline-flex;
@@ -101,45 +103,72 @@ const initials = (name || '')
     justify-content: center;
     font-family: var(--font-serif);
     font-style: italic;
-    font-size: 22px;
+    font-size: 38px;
     color: var(--gold-deep);
     border: 1px solid var(--gold-soft);
+    filter: none;
+    background: var(--paper);
   }
 
-  .author-meta {
+  /* === Filet or avec étoile centrale === */
+  .author-divider {
     display: flex;
-    flex-direction: column;
-    gap: 4px;
-    min-width: 0;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin: 0 auto 16px;
+    width: 78%;
   }
+  .author-divider-line {
+    flex: 1;
+    height: 1px;
+    background: var(--gold);
+    opacity: 0.55;
+  }
+  .author-divider-mark {
+    color: var(--gold);
+    font-size: 11px;
+    line-height: 1;
+  }
+
+  /* === Eyebrow gold uppercase === */
+  .author-eyebrow {
+    font-family: var(--font-sans);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.34em;
+    color: var(--gold-deep);
+    font-weight: 600;
+    margin-bottom: 14px;
+  }
+
+  /* === Nom italique Cormorant === */
   .author-name {
+    display: block;
     font-family: var(--font-serif);
     font-style: italic;
-    font-size: 20px;
+    font-weight: 400;
+    font-size: 22px;
     line-height: 1.2;
     color: var(--navy);
     text-decoration: none;
-    border-bottom: none;
+    border: none;
+    letter-spacing: -0.005em;
   }
   a.author-name { transition: color 0.2s; }
   a.author-name:hover { color: var(--gold-deep); }
 
-  .author-role {
-    font-family: var(--font-sans);
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.28em;
-    color: var(--ink-soft);
-    font-weight: 500;
-  }
-
-  .author-bio {
-    font-family: var(--font-serif);
-    font-size: 14px;
-    line-height: 1.55;
-    color: var(--ink-mid);
-    margin: 0;
-    font-style: italic;
-    letter-spacing: 0.005em;
+  /* En dessous de 1100px, la sidebar disparaît dans le flow mobile → on
+     enlève le sticky et on réduit le padding. */
+  @media (max-width: 1100px) {
+    .author-card {
+      position: static;
+      top: auto;
+      padding: 0;
+    }
+    .author-portrait {
+      width: 96px;
+      height: 96px;
+    }
   }
 </style>

@@ -47,6 +47,11 @@ const {
   <div class="article-shell">
     <div class="article-grid">
 
+      {/* === Sidebar gauche : boîte rédacteur (sticky) === */}
+      <aside class="article-aside-left">
+        {author && author.name && <ArticleAuthor {...author} />}
+      </aside>
+
       {/* === Colonne centrale : carte paper === */}
       <main class="article-main">
 
@@ -94,9 +99,8 @@ const {
 
       </main>
 
-      {/* === Sidebar droite : auteur + articles liés === */}
+      {/* === Sidebar droite : articles liés === */}
       <aside class="article-aside">
-        {author && author.name && <ArticleAuthor {...author} />}
         {related.length > 0 && <ArticleRelated articles={related} />}
       </aside>
 
@@ -129,20 +133,22 @@ const {
     padding: 0 48px 60px;
   }
 
-  /* === Grille 2 colonnes ===
-     Article 760px | Aside 280px | gap 60px
-     Total ~1100px, centré dans 1480 - 96 = 1384 → ça respire largement.
-     Le sommaire est désormais inline (en haut d'article), plus en sidebar. */
+  /* === Grille 3 colonnes ===
+     Auteur 220px | Article 760px | Related 280px | gap 60px
+     Total ~1380px, fits dans 1480 - 96 = 1384 ✓.
+     PAS d'align-items: start → les asides s'étirent à la hauteur de
+     l'article-main, ce qui permet au sticky de la boîte rédacteur de
+     fonctionner naturellement. */
   .article-grid {
     display: grid;
-    grid-template-columns: minmax(0, 760px) 280px;
+    grid-template-columns: 220px minmax(0, 760px) 280px;
     gap: 60px;
     justify-content: center;
-    align-items: start;
   }
 
+  .article-aside-left,
   .article-aside {
-    align-self: start;
+    /* On laisse stretch (default) pour que sticky ait un parent assez grand */
   }
 
   /* === Carte paper centrale ===
@@ -226,7 +232,7 @@ const {
   .article-cover figcaption {
     font-family: var(--font-serif);
     font-style: italic;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--ink-soft);
     margin-top: 14px;
     line-height: 1.5;
@@ -354,7 +360,7 @@ const {
   .article-content :global(figcaption) {
     font-family: var(--font-serif);
     font-style: italic;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--ink-soft);
     margin-top: 12px;
     text-align: center;
@@ -384,8 +390,15 @@ const {
     .article-grid {
       grid-template-columns: minmax(0, 760px);
     }
-    .article-aside {
+    /* Sur mobile : article D'ABORD, puis auteur, puis related. */
+    .article-main { order: 1; }
+    .article-aside-left {
+      order: 2;
       margin-top: 60px;
+    }
+    .article-aside {
+      order: 3;
+      margin-top: 40px;
     }
     .article-main {
       padding: 28px 48px 60px;
