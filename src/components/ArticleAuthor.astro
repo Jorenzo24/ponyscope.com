@@ -85,20 +85,20 @@ const initials = (name || '')
   }
 
   /* === Portrait carré façon tirage matté ===
-     180×180 (presque toute la largeur du 220px column). Bord blanc 8px +
-     ring or 1px + ombre stratifiée. Coins légèrement arrondis (4px) pour
-     adoucir sans virer au médaillon. */
+     140×140 — taille calibrée pour laisser respirer la composition sans
+     étouffer la colonne 220px. Bord blanc 8px + ring or 1px + ombre stratifiée.
+     Coins légèrement arrondis (4px) pour adoucir sans virer au médaillon. */
   .author-portrait {
-    margin: 0 auto 24px;
-    width: 180px;
-    height: 180px;
-    padding: 8px;
+    margin: 0 auto 22px;
+    width: 140px;
+    height: 140px;
+    padding: 7px;
     background: #FFFFFF;
     border-radius: 4px;
     box-shadow:
       0 0 0 1px rgba(191, 155, 102, 0.5),
       0 4px 12px -4px rgba(16, 20, 47, 0.18),
-      0 22px 44px -16px rgba(16, 20, 47, 0.35);
+      0 18px 36px -14px rgba(16, 20, 47, 0.32);
   }
 
   .author-avatar {
@@ -175,16 +175,17 @@ const initials = (name || '')
   a.author-name:hover { color: var(--gold-deep); }
 
   /* === Bio = phrase courte / punchline ===
-     Italique gris, guillemets gold en pseudo-éléments. */
+     Italique, guillemets gold en pseudo-éléments. Couleur plus contrastée
+     (navy à 78%) et taille bumpée à 15px pour rester lisible dans la colonne 220px. */
   .author-bio {
     margin: 0 auto;
     font-family: var(--font-serif);
     font-style: italic;
-    font-size: 13.5px;
+    font-size: 15px;
     line-height: 1.5;
-    color: var(--ink-mid);
+    color: rgba(16, 20, 47, 0.78);
     letter-spacing: 0.005em;
-    max-width: 92%;
+    max-width: 96%;
   }
   .author-bio::before {
     content: '« ';
