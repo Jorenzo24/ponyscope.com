@@ -71,16 +71,23 @@ const {
 <style>
   .hero {
     position: relative;
-    min-height: 560px;
-    height: 72vh;
-    max-height: 760px;
+    min-height: 460px;
+    height: 54vh;
+    max-height: 560px;
     background:
-      /* Overlay sombre dégradé : 45 % au centre, 80 % aux bords → vignette
-         qui assombrit l'image et garantit la lisibilité du texte blanc. */
+      /* Halo doré subtil qui "monte" du bas — chaleur de bougie / lampe
+         d'imprimerie, donne envie de descendre vers la page papier. */
+      linear-gradient(
+        to bottom,
+        transparent 60%,
+        rgba(191, 155, 102, 0.08) 85%,
+        rgba(191, 155, 102, 0.18) 100%
+      ),
+      /* Vignette principale, un poil plus tiède au centre. */
       radial-gradient(
         ellipse 130% 90% at center,
-        rgba(8, 10, 31, 0.45) 0%,
-        rgba(8, 10, 31, 0.82) 100%
+        rgba(28, 22, 36, 0.42) 0%,
+        rgba(8, 10, 31, 0.84) 100%
       ),
       url('/hero-background.png') center / cover no-repeat,
       var(--navy);
@@ -89,6 +96,28 @@ const {
     display: flex;
     align-items: center;
     justify-content: center;
+  }
+
+  /* Filet or fin sur le bord bas : transition entre navy et paper, façon
+     "trait sous le titre du chapitre" d'un livre relié. Dégradé pour qu'il
+     fonde sur les bords plutôt que de couper net. */
+  .hero::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(
+      to right,
+      transparent 5%,
+      rgba(191, 155, 102, 0.55) 32%,
+      rgba(191, 155, 102, 0.78) 50%,
+      rgba(191, 155, 102, 0.55) 68%,
+      transparent 95%
+    );
+    z-index: 3;
+    pointer-events: none;
   }
 
   /* Voile texturé très subtil pour casser le navy "plat" */
@@ -147,7 +176,7 @@ const {
     align-items: center;
     justify-content: center;
     gap: 16px;
-    margin-bottom: 36px;
+    margin-bottom: 26px;
     font-family: var(--font-sans);
     font-size: 11px;
     text-transform: uppercase;
@@ -172,14 +201,16 @@ const {
     line-height: 1;
   }
 
-  /* === Titre — la pièce centrale === */
+  /* === Titre — la pièce centrale ===
+     Max légèrement réduit (88→76px) suite au raccourcissement du hero,
+     pour que le titre respire dans la nouvelle hauteur. */
   h1.hero-title {
     font-family: var(--font-serif);
     font-weight: 400;
-    font-size: clamp(44px, 5.4vw, 88px);
+    font-size: clamp(40px, 5vw, 76px);
     line-height: 1.05;
     letter-spacing: -0.022em;
-    margin-bottom: 44px;
+    margin-bottom: 32px;
     color: var(--paper);
     max-width: 920px;
     /* Équilibre les lignes (titres longs en 3 lignes plutôt qu'1 ligne très
