@@ -43,6 +43,8 @@ const {
       </nav>
     )}
 
+    <OrnamentDivider symbol="✦" width="56px" variant="gold-soft" marginY="20px" />
+
     <h1 class="hero-title" set:html={title}></h1>
 
     {(category || date || readingTime) && (
@@ -58,8 +60,6 @@ const {
         )}
       </div>
     )}
-
-    <OrnamentDivider symbol="✦" width="56px" variant="gold-soft" marginY="0" />
   </div>
 
   <div class="hero-scroll">
@@ -153,7 +153,7 @@ const {
     justify-content: center;
     flex-wrap: wrap;
     gap: 10px;
-    margin-bottom: 28px;
+    margin-bottom: 0; /* L'OrnamentDivider qui suit a sa propre marge */
     font-family: var(--font-sans);
     font-size: 10px;
     text-transform: uppercase;
