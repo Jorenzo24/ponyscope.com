@@ -15,7 +15,7 @@
 export interface Props {
   name?: string;
   role?: string;
-  bio?: string;          // ignoré (compat backwards) — le design est volontairement sans bio
+  bio?: string;          // 1 phrase courte/punchline ajoutée dans Strapi
   avatarURL?: string;
   href?: string;
 }
@@ -23,6 +23,7 @@ export interface Props {
 const {
   name,
   role = 'Rédacteur',
+  bio,
   avatarURL,
   href,
 } = Astro.props;
@@ -63,6 +64,8 @@ const initials = (name || '')
     ) : (
       <span class="author-name">{name}</span>
     )}
+
+    {bio && <p class="author-bio" set:html={bio}></p>}
   </aside>
 )}
 
@@ -71,11 +74,19 @@ const initials = (name || '')
     position: sticky;
     top: 100px;
     text-align: center;
-    padding: 24px 8px 24px;
+    padding: 32px 20px 26px;
+    /* Box ivory-warm + ombre douce → cohérence avec le sommaire qui est en
+       boîte aussi (les deux "encarts éditoriaux" partagent le même langage). */
+    background: var(--ivory-warm);
+    border-radius: 4px;
+    box-shadow:
+      0 1px 0 rgba(16, 20, 47, 0.04),
+      0 14px 30px -22px rgba(16, 20, 47, 0.20);
   }
 
   /* === Portrait : avatar circulaire dans un cadre blanc, ombre stratifiée ===
-     Cohérence avec le traitement "tirage matté" appliqué aux images d'article. */
+     Cadre à 2 niveaux : ring or 1px à l'extérieur + bord blanc 6px à l'intérieur
+     → fini "miniature encadrée" plus distinctif que le simple cadre blanc. */
   .author-portrait {
     margin: 0 auto 22px;
     width: 112px;
@@ -84,6 +95,7 @@ const initials = (name || '')
     background: #FFFFFF;
     border-radius: 50%;
     box-shadow:
+      0 0 0 1px rgba(191, 155, 102, 0.55),
       0 4px 12px -4px rgba(16, 20, 47, 0.18),
       0 16px 36px -12px rgba(16, 20, 47, 0.35);
   }
@@ -157,6 +169,33 @@ const initials = (name || '')
   }
   a.author-name { transition: color 0.2s; }
   a.author-name:hover { color: var(--gold-deep); }
+
+  /* === Bio = phrase courte / punchline ===
+     Encadrée par des guillemets français gold en pseudo-éléments — donne
+     une voix de "punchline d'auteur" sans alourdir le balisage. */
+  .author-bio {
+    margin: 14px auto 0;
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 13px;
+    line-height: 1.55;
+    color: var(--ink-mid);
+    letter-spacing: 0.005em;
+    max-width: 90%;
+  }
+  .author-bio::before {
+    content: '« ';
+    color: var(--gold);
+    font-style: normal;
+    font-weight: 500;
+  }
+  .author-bio::after {
+    content: ' »';
+    color: var(--gold);
+    font-style: normal;
+    font-weight: 500;
+  }
+  .author-bio :global(em) { font-style: normal; } /* nested em devient roman */
 
   /* En dessous de 1100px, la sidebar disparaît dans le flow mobile → on
      enlève le sticky et on réduit le padding. */
