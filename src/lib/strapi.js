@@ -30,6 +30,22 @@ export function isHiddenArticle(article) {
 }
 
 /**
+ * Mapping slug Strapi → slug d'URL. Permet aux URLs publiques (cf. Nav.astro)
+ * de différer des slugs internes Strapi quand on veut une URL plus courte ou
+ * différente. Si un slug n'a pas d'alias, on garde tel quel.
+ */
+const CATEGORY_SLUG_ALIASES = {
+  'tops-cheval': 'tops',
+  'tutos-cheval': 'tutos',
+  'metiers-equestres': 'metiers',
+};
+
+/** Slug d'URL pour une catégorie Strapi donnée. */
+function urlSlugFor(strapiSlug) {
+  return CATEGORY_SLUG_ALIASES[strapiSlug] || strapiSlug;
+}
+
+/**
  * Fait un GET sur l'API Strapi et renvoie le JSON.
  * @param {string} path  Chemin commençant par /api/...
  * @returns {Promise<any>}
@@ -230,36 +246,39 @@ export function getCategoryTree(articles) {
   for (const article of articles) {
     const cat = article?.primaryCategory;
     if (!cat || !cat.slug) continue;
-    // Catégorie cachée : ne PAS générer de page catégorie pour ses articles.
     if (isHiddenArticle(article)) continue;
 
-    // Walk up parent chain (Strapi populate : parent → grand-parent).
-    // chain[0] = catégorie racine, chain[chain.length-1] = catégorie de l'article
-    const chain = [];
-    let cur = cat;
-    while (cur && cur.slug) {
-      chain.unshift({ slug: cur.slug, name: cur.name || prettyCategoryName(cur.slug) });
-      cur = cur.parent;
+    // URL plate : chaque catégorie a sa propre page à /<aliasedSlug>, indépendante
+    // de la hiérarchie Strapi. L'article apparaît uniquement sur la page de sa
+    // primaryCategory directe (PAS d'héritage ascendant) → c'est ce qui matche
+    // l'intention du nav qui pointe vers /tops, /tutos, /guides-galops, etc.
+    const path = '/' + urlSlugFor(cat.slug);
+    if (!map.has(path)) {
+      map.set(path, {
+        path,
+        slug: cat.slug,
+        name: cat.name || prettyCategoryName(cat.slug),
+        articles: [],
+        subcategoryPaths: new Set(),
+      });
     }
-    if (chain.length === 0) continue;
+    map.get(path).articles.push(article);
 
-    // Rattache l'article à CHAQUE niveau de la chaîne (ancêtres inclusifs)
-    for (let i = 0; i < chain.length; i++) {
-      const path = '/' + chain.slice(0, i + 1).map((c) => c.slug).join('/');
-      if (!map.has(path)) {
-        map.set(path, {
-          path,
-          slug: chain[i].slug,
-          name: chain[i].name,
+    // On note la relation parent→enfant pour pouvoir afficher des pills de
+    // navigation entre catégories sœurs sur la page du parent (ex : sur
+    // /guides-cheval, pills vers /guides-galops, /metiers, /ethologie).
+    if (cat.parent?.slug) {
+      const parentPath = '/' + urlSlugFor(cat.parent.slug);
+      if (!map.has(parentPath)) {
+        map.set(parentPath, {
+          path: parentPath,
+          slug: cat.parent.slug,
+          name: cat.parent.name || prettyCategoryName(cat.parent.slug),
           articles: [],
           subcategoryPaths: new Set(),
         });
       }
-      map.get(path).articles.push(article);
-      if (i + 1 < chain.length) {
-        const childPath = '/' + chain.slice(0, i + 2).map((c) => c.slug).join('/');
-        map.get(path).subcategoryPaths.add(childPath);
-      }
+      map.get(parentPath).subcategoryPaths.add(path);
     }
   }
 
