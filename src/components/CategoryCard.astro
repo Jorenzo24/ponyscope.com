@@ -3,6 +3,12 @@
 // Carte d'article pour les listings de catégorie (taille magazine, plus grosse
 // que ArticleRelated). Image portrait 4:5, catégorie label gold, titre Cormorant,
 // date italique.
+//
+// Props :
+//   article  — l'article Strapi
+//
+// Émet des data-attributes (data-date, data-title) consommés par le script
+// de filtre/tri/pagination côté client de CategoryView.
 
 import { mediaURL, getArticlePath } from '../lib/strapi.js';
 
@@ -11,6 +17,10 @@ export interface Props {
 }
 
 const { article } = Astro.props;
+
+// Données pour le filtre/tri client
+const tsRaw = article?.originalPublishedAt || article?.publishedAt || '';
+const ts = tsRaw ? new Date(tsRaw).getTime() : 0;
 
 function formatDate(a: any): string {
   const raw = a?.originalPublishedAt || a?.publishedAt;
@@ -38,7 +48,12 @@ function coverURL(a: any): string | undefined {
 }
 ---
 
-<article class="card">
+<article
+  class="card"
+  data-card
+  data-date={ts}
+  data-title={(article.title || '').toLowerCase()}
+>
   <a class="card-link" href={getArticlePath(article)}>
     <div class="card-media">
       {coverURL(article) ? (
@@ -70,15 +85,15 @@ function coverURL(a: any): string | undefined {
   .card {
     background: var(--paper);
     box-shadow:
-      0 1px 0 rgba(16, 20, 47, 0.04),
-      0 30px 60px -40px rgba(16, 20, 47, 0.18);
+      0 1px 0 rgba(74, 54, 30, 0.05),
+      0 30px 60px -40px rgba(74, 54, 30, 0.24);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
   }
   .card:hover {
     transform: translateY(-4px);
     box-shadow:
-      0 1px 0 rgba(16, 20, 47, 0.04),
-      0 40px 80px -36px rgba(16, 20, 47, 0.28);
+      0 1px 0 rgba(74, 54, 30, 0.05),
+      0 40px 80px -36px rgba(74, 54, 30, 0.34);
   }
 
   .card-link {
@@ -88,14 +103,14 @@ function coverURL(a: any): string | undefined {
     border-bottom: none;
   }
 
-  /* Media : ratio 4:5 portrait, façon Vogue/Cereal */
+  /* Media : ratio 4:3 paysage */
   .card-media {
     position: relative;
-    aspect-ratio: 4 / 5;
+    aspect-ratio: 4 / 3;
     overflow: hidden;
     background: var(--ivory-warm);
-    /* Liseré blanc "tirage matté" pour faire écho aux images d'article */
-    border: 8px solid #FFFFFF;
+    /* Liseré "tirage matté" crème chaud (et non blanc pur, trop froid) */
+    border: 8px solid var(--paper);
   }
   .card-media img {
     width: 100%;
@@ -103,7 +118,7 @@ function coverURL(a: any): string | undefined {
     object-fit: cover;
     display: block;
     transition: transform 0.6s ease;
-    filter: saturate(0.9) sepia(0.06) contrast(1.03);
+    filter: saturate(1.06) contrast(1.02) brightness(1.02);
   }
   .card:hover .card-media img {
     transform: scale(1.04);
@@ -113,6 +128,7 @@ function coverURL(a: any): string | undefined {
     height: 100%;
     background: linear-gradient(135deg, var(--ivory-warm), var(--ivory));
   }
+
 
   /* Corps de la card */
   .card-body {
@@ -172,8 +188,49 @@ function coverURL(a: any): string | undefined {
     letter-spacing: 0.01em;
   }
 
+  /* === Variante "feature" : carte large pour casser la grille ===
+     Le span 2 colonnes + la mise en avant sont posés sur .card par le JS de
+     CategoryView (toggle de la classe card--feature au fil de la pagination). */
+  .card.card--feature {
+    grid-column: span 2;
+    grid-row: span 2;
+    align-self: stretch;          /* remplit ses 2 rangées (≈ 2 cartes de haut) */
+    display: flex;
+    flex-direction: column;
+  }
+  .card.card--feature .card-link {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+  }
+  .card.card--feature .card-media {
+    aspect-ratio: auto;           /* l'image remplit la hauteur dispo */
+    flex: 1 1 auto;
+    min-height: 300px;
+  }
+  .card.card--feature .card-body {
+    flex: 0 0 auto;
+    padding: 32px 38px 36px;
+  }
+  .card.card--feature .card-title {
+    font-size: 30px;
+    -webkit-line-clamp: 2;
+  }
+  .card.card--feature .card-excerpt {
+    font-size: 15.5px;
+    -webkit-line-clamp: 3;
+    max-width: 60ch;
+  }
+
   @media (max-width: 768px) {
     .card-body { padding: 20px 22px 24px; }
     .card-title { font-size: 19px; }
+  }
+  @media (max-width: 640px) {
+    /* En 1 colonne, pas de span possible : la feature redevient normale. */
+    .card.card--feature { grid-column: auto; grid-row: auto; display: block; }
+    .card.card--feature .card-link { display: block; }
+    .card.card--feature .card-media { aspect-ratio: 4 / 3; flex: none; min-height: 0; }
+    .card.card--feature .card-title { font-size: 21px; }
   }
 </style>

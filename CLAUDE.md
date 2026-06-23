@@ -38,7 +38,7 @@ communauté) + couches de monétisation.
 - Pendant tout le dev : `noindex,nofollow` partout (le site ne doit pas être
   indexé par Google tant qu'il n'est pas lancé officiellement).
 - L'ancien site `contre-galop.com` reste en ligne jusqu'au jour de bascule.
-- **SSG pur** : Strapi est appelé UNIQUEMENT au build (565 pages prégénérées),
+- **SSG pur** : Strapi est appelé UNIQUEMENT au build (~594 pages prégénérées),
   pas au runtime. Aucune requête live vers Strapi côté visiteur.
 
 ---
@@ -67,62 +67,96 @@ communauté) + couches de monétisation.
 
 ---
 
-## 4. État actuel du projet (au dernier point)
+## 4. État actuel du projet (maj 2026-06-23)
 
 ✅ Fait et fonctionnel :
-- Projet Astro 6 dans `~/Sites/ponyscope.com` (hors iCloud).
+- Projet Astro 6 dans `~/Documents/SITES/GIT/ponyscope.com` (iCloud désactivé).
 - `.git` connecté à GitHub `Jorenzo24/ponyscope.com` (branche `main`).
 - Serveur dev : `npm run dev` → `http://localhost:4321`.
-- **Strapi 5** installé et configuré sur `cms.ponyscope.com` (VPS Hetzner),
-  ~580 articles déjà migrés depuis l'ancien WordPress.
-- **Cloudflare Pages** connecté au repo GitHub : build auto à chaque push
-  sur `main` (~1-2 min), 565 pages générées en SSG.
-- **`https://ponyscope.com`** en prod avec SSL Cloudflare (custom domain
-  actif). Preview URL : `https://ponyscope-com.pages.dev`.
-- **Pipeline Strapi → Astro fonctionnel** : la route catch-all
-  `src/pages/[...path].astro` génère toutes les pages d'articles depuis
-  les slugs Strapi, en préservant exactement les URLs de l'ancien site.
-- **Refactor design en composants Astro propres** : `BaseLayout`, `Nav`,
-  `Footer`, `ArticleHero` (hero 100vh image Strapi), `ArticleBody` (drop
-  cap, h2 stylisés), `BlocksRenderer` (rendu blocks Strapi).
-- Design system appliqué : navy/gold/paper + Cormorant Garamond + Inter.
-- `noindex,nofollow` actif partout (`BaseLayout.astro` ligne 31 ; forcé
-  à `true` dans `[...path].astro` ligne 69).
+- **Strapi 5** sur `cms.ponyscope.com` (VPS Hetzner), ~585 articles migrés du WP.
+- **Cloudflare Pages** connecté au repo : build auto à chaque push `main`
+  (~1-2 min). **Dernier build : 594 pages en SSG.**
+- **`https://ponyscope.com`** en prod, SSL Cloudflare, custom domain actif.
+  Preview : `https://ponyscope-com.pages.dev`.
+- **Pipeline Strapi → Astro** : route catch-all `src/pages/[...path].astro`
+  qui sert SOIT un article SOIT une page catégorie (selon `kind`), en
+  préservant exactement les anciens slugs Contre-Galop.
+- **Composants Astro** (dans `src/components/`) :
+  - Article : `ArticleHero`, `ArticleBody`, `BlocksRenderer`, `ArticleAuthor`
+    (design "frontispice de magazine", navy horizontal), `ArticleRelated`
+    (3 articles même catégorie), `ArticleTOC` + `ArticleTOCInline` (sommaire).
+  - Catégorie : `CategoryView` + `CategoryCard` (cf. ci-dessous).
+  - Commun : `Nav`, `Footer`, `OrnamentDivider`, `AdSlot` (slot pub amorcé).
+- **Pages catégorie refondues (juin 2026)** — `CategoryView` + `CategoryCard`,
+  partagés par les 8 rubriques (blog, tops, actu-cheval, tutos, guides-cheval,
+  guides-galops, metiers, ethologie). Modifier ces 2 composants = modifier
+  TOUTES les pages catégorie d'un coup. Détail :
+  - **Hero photo plein cadre, traitement CHAUD** : cover de l'article phare en
+    fond (léger flou + sépia + voile espresso, PAS bleu froid), overline
+    « Le magazine », titre monumental `clamp(58→124px)`, « N articles · depuis
+    20XX » (année calculée auto), et **barre de recherche stylisée DANS le hero**
+    (pilule verre dépoli, focus or). Image fixe par rubrique possible via la map
+    `HERO_IMAGES` (déposer dans `public/heroes/`, fallback = cover phare).
+    ⏳ Joseph doit fournir les images fixes.
+  - **"La Une"** sous le hero : l'article phare en grand format paysage.
+  - **Grille 4 colonnes** (paliers 4→3→2→1) sur fond crème, **carte "feature"
+    2×2** qui casse la grille (1 par page, via classe `card--feature` posée en
+    JS ; `grid-auto-flow: dense` pour combler ; désactivée si < 8 cartes).
+  - **Filtre texte + tri** (Récent/Ancien/A–Z) + **compteur de résultats** +
+    **pagination** (pastilles rondes or). Tout **100% client** (JS dans le
+    `<script>` de `CategoryView`), sur les cartes rendues au build → SSG pur.
+    **13 cartes/page** (1 feature = 4 cellules + 12 = 16 = 4 rangées pleines).
+  - Animations d'apparition (fade + montée en cascade, `prefers-reduced-motion`).
+  - ⚠️ **Piège Astro rencontré** : les éléments créés en JS (boutons de
+    pagination) n'ont PAS l'attribut de scope `data-astro-cid-*`, donc le CSS
+    scopé ne s'y applique pas. Solution : sélecteurs `.parent :global(button)`.
+  - Chapô éditorial par rubrique : map `CATEGORY_INTROS` (clé = slug Strapi).
+  - Modèle de données : en flat, tous les articles d'une page partagent leur
+    `primaryCategory` → un filtre par sous-catégorie n'aurait rien à filtrer ;
+    d'où le choix filtre-texte + tri. Liens vers catégories sœurs dans `cat-subs`.
+- **Page d'accueil v1** : `src/pages/index.astro` n'est plus l'ancien template
+  (hero éditorial + grille des 12 derniers, via `CategoryCard`). v1, à revoir.
+- Design system : navy/gold/paper + Cormorant Garamond + Inter.
+- **Direction "chaleur" (décidée juin 2026)** : le site paraissait froid (navy
+  dominant). Choix validé = **réchauffer SANS nouvelle couleur** (palette
+  verrouillée respectée) : crème dominant, navy réduit aux touches, fini le
+  blanc pur (bordures de cartes crème), ombres chaudes (brun léger, pas
+  gris-navy), images revivifiées (saturate ↑ au lieu de désaturées), cartes en
+  4:3. Pistes refusées : ajouter un brun cuir/châtaigne ; accent oxblood/ocre.
+- `noindex,nofollow` actif PARTOUT (forcé `true` dans `BaseLayout.astro` et
+  `[...path].astro`) — normal tant que non lancé.
 
-🐛 Bugs connus à corriger (non bloquants) :
-- Le `<title>` de l'onglet affiche encore « Contre Galop » au lieu de
-  « Ponyscope » (à fixer dans `BaseLayout.astro` ou la source Strapi).
-- Chapô dupliqué : l'excerpt Strapi est souvent identique au 1er paragraphe
-  du `content`, donc affiché deux fois. À régler dans `BlocksRenderer.astro`
-  (skip le 1er paragraphe si identique à l'excerpt).
+🐛 Bugs connus / à vérifier (non bloquants) :
+- `<title>` de l'onglet : afficherait encore « Contre Galop » sur certaines
+  pages — à reverifier (peut venir de la source Strapi).
 - **13/14 avatars d'auteurs manquants** dans Strapi (seul Joseph Lambert
-  a été uploadé manuellement). Le script de migration n'a pas traité les
-  photos d'auteurs. Soit upload manuel (Strapi admin → Authors), soit
-  étendre le script, soit garder le fallback initiales (cercle bordé or)
-  qui est élégant et fait magazine.
-- Catégorie test à supprimer dans Strapi : slug
-  `vju86y7r5687ita7r0uv3lart1clebatar456tyt657hgt67ygfdtyrtuk67iuyguft7dfuydr`
-  (3 articles dedans à reclasser ailleurs).
+  uploadé). Fallback initiales (cercle bordé or) élégant pour l'instant.
+- `/blog` est un fourre-tout (~373 articles → 373 cartes dans le HTML de la
+  page catégorie). Ça marche (lazy-load + pagination) mais c'est lourd ;
+  à traiter à part un jour.
+
+✅ Déjà réglé (historique) :
+- Chapô dupliqué : corrigé via `extractLedeFromBlocks()` (le chapô = 1er
+  paragraphe du contenu, retiré du flow pour ne pas s'afficher 2×).
+- "Catégorie test" : devenue la **catégorie cachée** officielle —
+  `HIDDEN_CATEGORY_SLUG` dans `strapi.js`. Ses articles existent mais ne sont
+  jamais exposés (ni page catégorie, ni breadcrumb, ni listing), forcés noindex.
 
 ℹ️ Notes data :
-- Les images de cover migrées depuis WP sont en résolution moyenne (~760px)
-  — d'où le choix design de mettre la cover dans le flow (taille native)
-  plutôt qu'en hero étiré. Ré-extraction des images source possible plus
-  tard si on veut un hero full-bleed sur certains articles phares.
+- Covers migrées du WP en résolution moyenne (~760px) — cover mise dans le
+  flow (taille native) plutôt qu'en hero étiré. Ré-extraction possible plus tard.
 
 🔜 Reste à faire (ordre proposé) :
-1. Quick wins : fix `<title>` + chapô dupliqué.
-2. Composant Newsletter (bloc navy plein écran en fin d'article).
-3. TOC sticky-deferred (220px à gauche, JS custom — code dispo dans
-   `.maquette-reference/article-original.astro`, à porter en composant Astro).
-4. Related articles (3 articles random même catégorie) + fonction
-   `getRelatedArticles()` dans `src/lib/strapi.js`.
-5. Pages catégorie (`/blog`, `/tops`, `/tutos`, `/guides-galops`, `/metiers`,
-   `/ethologie` — actuellement 404).
-6. Page d'accueil (`src/pages/index.astro` est encore l'ancien template).
-7. **Quand prêt** : enlever le `noindex` global, passer à `index, follow`
-   selon le champ `metaRobots` de Strapi → bascule officielle (et 301
-   globale de `contre-galop.com` → `ponyscope.com`).
+1. **Phase 2 recherche** : intégrer **Pagefind** (index build-time, zéro
+   backend) pour une recherche GLOBALE, UI overlay déclenchée depuis la Nav.
+   ⚠️ Ajoute une dépendance + modifie `astro.config.mjs`, et ne marche
+   qu'après `npm run build` (PAS en `npm run dev`).
+2. Reverifier/fixer le `<title>` « Contre Galop ».
+3. Composant Newsletter (bloc navy plein écran en fin d'article).
+4. Page d'accueil finale (l'actuelle est une v1 assumée).
+5. **Quand prêt (go-live)** : enlever le `noindex` global, passer à
+   `index, follow` selon le champ `metaRobots` de Strapi → bascule officielle
+   + 301 globale `contre-galop.com` → `ponyscope.com`.
 
 ℹ️ **Migration WP→Strapi complète** : 585 articles WP = 585 articles
 Strapi, 0 manquant (vérifié par comparaison des slugs). L'API publique du
@@ -136,9 +170,10 @@ si besoin de refaire des extractions.
 - ❌ **Ne JAMAIS** réindexer le site (garder noindex partout tant que non lancé).
 - ❌ **Ne JAMAIS** modifier/supprimer le dossier `.git` ni changer le remote.
 - ❌ **Ne JAMAIS** changer les slugs / chemins d'URL des articles.
-- ❌ **Ne JAMAIS** travailler sur l'ancien dossier iCloud
-  (`~/Documents/SITES/GIT/ponyscope.com`). Le SEUL projet valide est
-  `~/Sites/ponyscope.com`.
+- ✅ **Emplacement du projet** : `~/Documents/SITES/GIT/ponyscope.com`
+  (iCloud désactivé sur la machine — juin 2026). C'est le SEUL dossier
+  valide, c'est ici que le `.git` est actif. (Ancien emplacement
+  `~/Sites/ponyscope.com` : obsolète.)
 - ❌ Ne pas réécrire le contenu éditorial sans consigne explicite.
 - ❌ Ne pas réintroduire de contenu inventé dans la maquette (stats bidon,
   fausses citations, fausses sources — déjà nettoyé volontairement).
@@ -186,7 +221,7 @@ si besoin de refaire des extractions.
 ## 7. Structure du projet (Astro)
 
 ```
-~/Sites/ponyscope.com/
+~/Documents/SITES/GIT/ponyscope.com/
 ├── CLAUDE.md                ← ce fichier
 ├── astro.config.mjs         ← config (site: https://ponyscope.com, output: static)
 ├── package.json
