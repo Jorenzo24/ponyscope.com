@@ -3,9 +3,12 @@ import { mediaURL, slugifyHeading, nodeText } from '../lib/strapi.js';
 
 interface Props {
   blocks: any[];
+  // Index de bloc APRÈS lequel on insère le contenu du slot "midroll".
+  // null/hors-bornes → pas d'injection (rendu normal d'un seul tenant).
+  injectAfterIndex?: number | null;
 }
 
-const { blocks = [] } = Astro.props;
+const { blocks = [], injectAfterIndex = null } = Astro.props;
 
 // Compteur de slugs pour gérer les headings qui auraient le même texte.
 // Doit produire EXACTEMENT les mêmes ids qu'extractHeadings (cf. strapi.js).
@@ -173,10 +176,28 @@ function renderBlock(block: any): string {
   return '';
 }
 
-const html = blocks.map(renderBlock).join('');
+// Point de coupe : on rend AVANT et APRÈS en un seul passage séquentiel pour
+// que la déduplication des ancres (usedSlugs) reste continue d'un bout à l'autre.
+const doSplit =
+  typeof injectAfterIndex === 'number' &&
+  injectAfterIndex >= 0 &&
+  injectAfterIndex < blocks.length - 1;
+
+const htmlBefore = doSplit
+  ? blocks.slice(0, injectAfterIndex + 1).map(renderBlock).join('')
+  : blocks.map(renderBlock).join('');
+const htmlAfter = doSplit
+  ? blocks.slice(injectAfterIndex + 1).map(renderBlock).join('')
+  : '';
 ---
 
-<div class="article-body" set:html={html} />
+<div class="article-body" set:html={htmlBefore} />
+{doSplit && (
+  <Fragment>
+    <slot name="midroll" />
+    <div class="article-body" set:html={htmlAfter} />
+  </Fragment>
+)}
 
 <style>
   .article-body :global(p) {

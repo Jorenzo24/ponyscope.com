@@ -1,0 +1,170 @@
+---
+// src/components/HoroscoponeyTeaser.astro
+// Encart "Horoscoponey" injecté au milieu des articles. Un SEUL signe à
+// l'honneur, choisi de façon déterministe à partir d'un `seed` (le chemin de
+// l'article) → chaque article a son signe "résident" stable, ce qui crée de la
+// variété sur tout le site sans charger 12 images par page.
+//
+// Éléments (maquette Joseph) : photo du signe · titre "Horoscoponey" · nom du
+// signe · prédiction · petit CTA "Voir mon signe".
+//
+// La prédiction est rendue au build (repli crawlable) puis actualisée "du jour"
+// côté client (hash date+signe). SSG pur, aucun backend.
+
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+import { SIGNS, PREDICTIONS } from '../data/horoscoponey.js';
+import { signImage } from '../lib/signImages.js';
+
+export interface Props {
+  seed?: string; // ex: chemin canonique de l'article — fixe le signe résident
+}
+const { seed = '' } = Astro.props;
+
+// Hash déterministe (FNV-1a) — même algo que côté client.
+function hashStr(s: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+const sign = SIGNS[hashStr(`sign::${seed}`) % SIGNS.length];
+// Prédiction de repli (build) : stable pour ce signe, écrasée par celle du jour.
+const fallbackPred = PREDICTIONS[hashStr(`fallback::${sign.slug}`) % PREDICTIONS.length];
+const img = signImage(sign.slug) as ImageMetadata | null;
+---
+
+<aside class="horo-teaser" data-ht-sign={sign.slug} aria-label="Horoscoponey — l'horoscope des cavaliers">
+  {img && (
+    <div class="ht-photo">
+      <Image src={img} alt={`Signe ${sign.name}`} widths={[160, 300]} sizes="146px" loading="lazy" />
+    </div>
+  )}
+
+  <div class="ht-body">
+    <span class="ht-kicker">✦ Horoscoponey ✦</span>
+    <h3 class="ht-signname">{sign.name}</h3>
+    <p class="ht-pred" data-ht-pred>{fallbackPred}</p>
+    <a class="ht-cta" href="/horoscoponey">Voir mon signe →</a>
+  </div>
+</aside>
+
+<script is:inline define:vars={{ PREDICTIONS }}>
+  function hashStr(s) {
+    let h = 2166136261;
+    for (let i = 0; i < s.length; i++) {
+      h ^= s.charCodeAt(i);
+      h = Math.imul(h, 16777619);
+    }
+    return h >>> 0;
+  }
+
+  const d = new Date();
+  const dayKey = `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+
+  document.querySelectorAll('.horo-teaser').forEach((root) => {
+    const slug = root.getAttribute('data-ht-sign');
+    const predEl = root.querySelector('[data-ht-pred]');
+    if (slug && predEl) {
+      const idx = hashStr(`${dayKey}::pred::${slug}`) % PREDICTIONS.length;
+      predEl.textContent = PREDICTIONS[idx];
+    }
+  });
+</script>
+
+<style>
+  .horo-teaser {
+    margin: 64px 0;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 28px;
+    background:
+      radial-gradient(ellipse 90% 130% at 6% 0%, rgba(191, 155, 102, 0.18), transparent 58%),
+      linear-gradient(135deg, #1c2350 0%, #10142F 52%, #0b0e22 100%);
+    color: var(--paper);
+    border-radius: 6px;
+    padding: 32px 38px 32px 30px;
+    box-shadow: 0 24px 60px -34px rgba(16, 20, 47, 0.7);
+  }
+
+  .ht-photo {
+    flex-shrink: 0;
+  }
+  .ht-photo :global(img) {
+    display: block;
+    width: 146px;
+    height: 146px;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 2px solid var(--gold-soft);
+    box-shadow: 0 10px 28px -14px rgba(0, 0, 0, 0.7);
+  }
+
+  .ht-body {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  /* Sélecteurs préfixés par .horo-teaser : l'encart est injecté DANS
+     .article-content, dont les styles globaux (h3/p/a navy) ont une forte
+     spécificité. Le préfixe nous fait repasser devant. */
+  .horo-teaser .ht-kicker {
+    font-family: var(--font-serif);
+    font-size: 17px;
+    letter-spacing: 0.04em;
+    color: var(--gold-soft);
+    line-height: 1;
+  }
+  .horo-teaser .ht-signname {
+    font-family: var(--font-serif);
+    font-weight: 500;
+    font-size: clamp(30px, 3.4vw, 40px);
+    line-height: 1.02;
+    letter-spacing: -0.015em;
+    color: var(--paper);
+    margin: 4px 0 6px;
+  }
+  .horo-teaser .ht-pred {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 22px;
+    line-height: 1.48;
+    color: rgba(250, 246, 238, 0.94);
+    margin: 0 0 8px;
+    max-width: 46ch;
+  }
+  .horo-teaser .ht-cta {
+    font-family: var(--font-sans);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    font-weight: 600;
+    color: var(--gold-soft);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    padding-bottom: 2px;
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .horo-teaser .ht-cta:hover {
+    color: var(--paper);
+    border-bottom-color: var(--gold);
+  }
+
+  @media (max-width: 560px) {
+    .horo-teaser {
+      grid-template-columns: 1fr;
+      justify-items: center;
+      text-align: center;
+      padding: 28px 22px;
+      gap: 18px;
+    }
+    .ht-body { align-items: center; }
+    .ht-photo :global(img) { width: 120px; height: 120px; }
+    .horo-teaser .ht-pred { font-size: 20px; }
+  }
+</style>

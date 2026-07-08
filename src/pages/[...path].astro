@@ -22,6 +22,7 @@ import ArticleHero from '../components/ArticleHero.astro';
 import ArticleBody from '../components/ArticleBody.astro';
 import BlocksRenderer from '../components/BlocksRenderer.astro';
 import CategoryView from '../components/CategoryView.astro';
+import HoroscoponeyTeaser from '../components/HoroscoponeyTeaser.astro';
 
 // ----- Génération des chemins statiques (SSG) -----
 export async function getStaticPaths() {
@@ -129,6 +130,38 @@ const { kind } = Astro.props;
     // Headings (pour le TOC sidebar gauche)
     const headings = extractHeadings(contentBlocks);
 
+    // Injection Horoscoponey au milieu : on l'insère dans un VRAI saut de ligne,
+    // c.-à-d. entre deux paragraphes consécutifs les plus proches du centre
+    // (et donc pas juste après une image ni en plein milieu d'une section).
+    // Fallbacks dégressifs si l'article n'a pas de paire de paragraphes adjacents.
+    const injectAfterIndex = (() => {
+      const n = contentBlocks.length;
+      if (n < 6) return null;
+      const mid = Math.floor(n / 2);
+      const isPara = (i: number) => (contentBlocks[i] as any)?.type === 'paragraph';
+
+      // 1) Bord paragraphe → paragraphe le plus proche du milieu.
+      let best = null;
+      let bestDist = Infinity;
+      for (let i = 1; i < n - 2; i++) {
+        if (isPara(i) && isPara(i + 1)) {
+          const dist = Math.abs(i - mid);
+          if (dist < bestDist) { bestDist = dist; best = i; }
+        }
+      }
+      if (best !== null) return best;
+
+      // 2) À défaut : juste avant un paragraphe (jamais collé après une image).
+      for (let d = 0; d < n; d++) {
+        for (const i of [mid + d, mid - d]) {
+          if (i >= 1 && i < n - 1 && isPara(i + 1)) return i;
+        }
+      }
+
+      // 3) Dernier recours : milieu strict.
+      return mid - 1;
+    })();
+
     // Auteur
     const authorName = article.author?.name;
     const authorBio = article.author?.bio || undefined;
@@ -170,7 +203,9 @@ const { kind } = Astro.props;
           author={authorData}
           related={related}
         >
-          <BlocksRenderer blocks={contentBlocks} />
+          <BlocksRenderer blocks={contentBlocks} injectAfterIndex={injectAfterIndex}>
+            <HoroscoponeyTeaser slot="midroll" seed={canonical || article.slug} />
+          </BlocksRenderer>
         </ArticleBody>
 
         <Footer slot="footer" />
