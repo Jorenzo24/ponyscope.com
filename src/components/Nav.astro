@@ -1,30 +1,32 @@
 ---
 // Nav.astro
-// Barre de navigation sticky : logo + liens catégories + search + CTA "S'abonner"
+// Barre de navigation sticky : logo + liens catégories + recherche.
+// Desktop : liens en ligne + loupe. Mobile (≤768px) : burger → panneau plein
+// écran avec les rubriques ET l'accès à la recherche.
+
+const LINKS = [
+  { href: '/blog', label: 'Blog' },
+  { href: '/tops', label: 'Tops' },
+  { href: '/tutos', label: 'Tutos' },
+  { href: '/guides-galops', label: 'Guides Galops' },
+  { href: '/metiers', label: 'Métiers' },
+  { href: '/ethologie', label: 'Éthologie' },
+];
 ---
 
 <nav class="nav" data-pagefind-ignore>
   <div class="nav-inner">
     <a href="/" class="logo" aria-label="Ponyscope — accueil">
       <span class="logo-mark">
-        <img
-          class="logo-icon"
-          src="/logo-carre-ponyscope.jpg"
-          alt=""
-          width="36"
-          height="36"
-        />
+        <img class="logo-icon" src="/logo-carre-ponyscope.jpg" alt="" width="36" height="36" />
         <span class="logo-word">Ponyscope</span>
       </span>
     </a>
+
     <ul class="nav-links">
-      <li><a href="/blog">Blog</a></li>
-      <li><a href="/tops">Tops</a></li>
-      <li><a href="/tutos">Tutos</a></li>
-      <li><a href="/guides-galops">Guides Galops</a></li>
-      <li><a href="/metiers">Métiers</a></li>
-      <li><a href="/ethologie">Éthologie</a></li>
+      {LINKS.map((l) => <li><a href={l.href}>{l.label}</a></li>)}
     </ul>
+
     <div class="nav-actions">
       <button class="nav-search" data-open-search aria-label="Rechercher">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -32,11 +34,66 @@
           <path d="m21 21-4.3-4.3"/>
         </svg>
       </button>
-      {/* CTA "S'abonner" retiré tant que la page /newsletter n'existe pas
-          (évite un lien 404). À réintroduire avec le composant Newsletter. */}
+
+      <button class="nav-burger" data-toggle-menu aria-label="Ouvrir le menu" aria-expanded="false" aria-controls="nav-mobile">
+        <span></span><span></span><span></span>
+      </button>
     </div>
   </div>
+
+  {/* Panneau mobile plein écran */}
+  <div class="nav-mobile" id="nav-mobile" hidden>
+    <ul class="nav-mobile-links">
+      {LINKS.map((l) => <li><a href={l.href}>{l.label}</a></li>)}
+      <li><a href="/horoscoponey">Horoscoponey</a></li>
+    </ul>
+    <button class="nav-mobile-search" data-open-search type="button">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+        <circle cx="11" cy="11" r="7"/>
+        <path d="m21 21-4.3-4.3"/>
+      </svg>
+      <span>Rechercher</span>
+    </button>
+  </div>
 </nav>
+
+<script>
+  const burger = document.querySelector('[data-toggle-menu]');
+  const panel = document.getElementById('nav-mobile');
+
+  function openMenu() {
+    if (!panel || !burger) return;
+    panel.hidden = false;
+    burger.classList.add('is-open');
+    burger.setAttribute('aria-expanded', 'true');
+    burger.setAttribute('aria-label', 'Fermer le menu');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeMenu() {
+    if (!panel || !burger || panel.hidden) return;
+    panel.hidden = true;
+    burger.classList.remove('is-open');
+    burger.setAttribute('aria-expanded', 'false');
+    burger.setAttribute('aria-label', 'Ouvrir le menu');
+    document.body.style.overflow = '';
+  }
+
+  burger?.addEventListener('click', () => {
+    if (panel?.hidden) openMenu();
+    else closeMenu();
+  });
+
+  // Tout clic sur un lien ou l'action recherche du panneau le referme.
+  // (Pour la recherche : l'overlay ré-active de lui-même le verrou de scroll.)
+  panel?.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement;
+    if (target.closest('a') || target.closest('[data-open-search]')) closeMenu();
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeMenu();
+  });
+</script>
 
 <style>
   .nav {
@@ -67,11 +124,7 @@
     text-decoration: none;
     justify-self: start;
   }
-  .logo-mark {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-  }
+  .logo-mark { display: inline-flex; align-items: center; gap: 10px; }
   .logo-icon {
     width: 36px;
     height: 36px;
@@ -80,9 +133,8 @@
     display: block;
     flex-shrink: 0;
   }
-  .logo-word {
-    line-height: 1;
-  }
+  .logo-word { line-height: 1; }
+
   .nav-links {
     display: flex;
     gap: 40px;
@@ -105,7 +157,7 @@
     justify-self: end;
     display: flex;
     align-items: center;
-    gap: 24px;
+    gap: 20px;
   }
   .nav-search {
     background: none;
@@ -113,22 +165,91 @@
     cursor: pointer;
     color: var(--navy);
     padding: 4px;
+    display: inline-flex;
   }
-  .nav-cta {
+
+  /* Burger : masqué en desktop */
+  .nav-burger {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+  }
+  .nav-burger span {
+    display: block;
+    height: 1.5px;
+    width: 22px;
+    margin: 0 auto;
+    background: var(--navy);
+    border-radius: 2px;
+    transition: transform 0.28s ease, opacity 0.2s ease;
+  }
+  .nav-burger.is-open span:nth-child(1) { transform: translateY(6.5px) rotate(45deg); }
+  .nav-burger.is-open span:nth-child(2) { opacity: 0; }
+  .nav-burger.is-open span:nth-child(3) { transform: translateY(-6.5px) rotate(-45deg); }
+
+  /* Panneau mobile */
+  .nav-mobile {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    /* démarre sous la barre de nav */
+    padding: 96px 28px 40px;
+    background: var(--paper);
+    z-index: 90;
+    display: flex;
+    flex-direction: column;
+    animation: nav-mobile-in 0.24s ease-out;
+    overflow-y: auto;
+  }
+  .nav-mobile[hidden] { display: none; }
+  @keyframes nav-mobile-in {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .nav-mobile-links {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .nav-mobile-links a {
+    display: block;
+    font-family: var(--font-serif);
+    font-size: 30px;
+    font-weight: 500;
+    color: var(--navy);
+    text-decoration: none;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--line);
+    letter-spacing: -0.01em;
+  }
+  .nav-mobile-links a:active { color: var(--gold-deep); }
+  .nav-mobile-search {
+    margin-top: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
     background: var(--navy);
     color: var(--paper);
-    padding: 11px 22px;
-    font-size: 11px;
+    border: none;
+    border-radius: 6px;
+    padding: 18px;
+    font-family: var(--font-sans);
+    font-size: 13px;
     text-transform: uppercase;
     letter-spacing: 0.18em;
-    font-weight: 500;
-    text-decoration: none;
-    transition: all 0.2s;
-    border: 1px solid var(--navy);
-  }
-  .nav-cta:hover {
-    background: var(--paper);
-    color: var(--navy);
+    font-weight: 600;
+    cursor: pointer;
   }
 
   @media (max-width: 768px) {
@@ -138,9 +259,9 @@
       grid-template-columns: 1fr auto;
     }
     .nav-links { display: none; }
-    .nav-search { display: none; }
+    .nav-search { display: none; }   /* la recherche passe dans le panneau mobile */
+    .nav-burger { display: flex; }
     .logo { font-size: 22px; }
     .logo-icon { width: 30px; height: 30px; }
-    .nav-cta { padding: 9px 16px; font-size: 10px; }
   }
 </style>
