@@ -89,7 +89,23 @@ const { kind } = Astro.props;
     const { article, related } = Astro.props as { article: any; related: any[] };
 
     // SEO
-    const metaTitle = article.seo?.metaTitle || article.title;
+    // Les titres migrés du WP (Yoast) traînent l'ancien nom de site en suffixe,
+    // souvent tronqué à la migration ("… - Contre…", "… - Contre Galo…"). Certains
+    // metaTitle ont déjà été rebrandés ("… - Ponyscope"), d'autres non, d'autres
+    // sont vides. On normalise : on retire tout suffixe de marque (ancien OU
+    // nouveau) en fin de titre, puis on ré-applique une marque unique et propre.
+    // On part du VRAI titre (H1), propre et non tronqué, plutôt que du
+    // seo.metaTitle Yoast (souvent tronqué "…" et suffixé de l'ancienne marque).
+    const rawTitle = article.title || article.seo?.metaTitle || '';
+    const baseTitle =
+      String(rawTitle)
+        .replace(/\s*[-–—|]\s*(?:contre\b[\s\S]*|ponyscope[\s\S]*)$/i, '')
+        .trim() || String(article.title || '').trim();
+    // Si le titre se termine déjà par le mot "Ponyscope" (présent dans le vrai
+    // titre, ex. "…la team Ponyscope"), on n'ajoute pas la marque (évite le doublon).
+    const metaTitle = /ponyscope\s*$/i.test(baseTitle)
+      ? baseTitle
+      : `${baseTitle} — Ponyscope`;
     const metaDescription = article.seo?.metaDescription || article.excerpt || '';
     const canonical = article.seo?.canonicalURL || '';
     const ogImage = article.seo?.metaImage?.url
