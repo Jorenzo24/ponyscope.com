@@ -67,7 +67,7 @@ communauté) + couches de monétisation.
 
 ---
 
-## 4. État actuel du projet (maj 2026-06-23)
+## 4. État actuel du projet (maj 2026-07-08)
 
 ✅ Fait et fonctionnel :
 - Projet Astro 6 dans `~/Documents/SITES/GIT/ponyscope.com` (iCloud désactivé).
@@ -127,13 +127,9 @@ communauté) + couches de monétisation.
   `[...path].astro`) — normal tant que non lancé.
 
 🐛 Bugs connus / à vérifier (non bloquants) :
-- `<title>` de l'onglet : afficherait encore « Contre Galop » sur certaines
-  pages — à reverifier (peut venir de la source Strapi).
-- **13/14 avatars d'auteurs manquants** dans Strapi (seul Joseph Lambert
-  uploadé). Fallback initiales (cercle bordé or) élégant pour l'instant.
 - `/blog` est un fourre-tout (~373 articles → 373 cartes dans le HTML de la
-  page catégorie). Ça marche (lazy-load + pagination) mais c'est lourd ;
-  à traiter à part un jour.
+  page catégorie). Ça marche (lazy-load + pagination) mais c'est lourd.
+  **DÉCISION (juillet 2026) : on n'y touche pas, ça ira pour le lancement.**
 
 ✅ Déjà réglé (historique) :
 - Chapô dupliqué : corrigé via `extractLedeFromBlocks()` (le chapô = 1er
@@ -141,22 +137,56 @@ communauté) + couches de monétisation.
 - "Catégorie test" : devenue la **catégorie cachée** officielle —
   `HIDDEN_CATEGORY_SLUG` dans `strapi.js`. Ses articles existent mais ne sont
   jamais exposés (ni page catégorie, ni breadcrumb, ni listing), forcés noindex.
+- **Titres « Contre Galop »** (juillet 2026) : les titres migrés du Yoast
+  traînaient l'ancien nom de site en suffixe, souvent tronqué « … ». Corrigé
+  dans `[...path].astro` : on part du vrai titre H1 (propre), on retire tout
+  suffixe de marque (ancien OU nouveau) et on ré-applique « — Ponyscope »
+  (pas de doublon si le titre contient déjà « Ponyscope »).
+- **Avatars auteurs** : uploadés dans Strapi et visibles sur le site.
+  L'ancienne note « 13/14 manquants » est CADUQUE.
 
 ℹ️ Notes data :
 - Covers migrées du WP en résolution moyenne (~760px) — cover mise dans le
   flow (taille native) plutôt qu'en hero étiré. Ré-extraction possible plus tard.
 
-🔜 Reste à faire (ordre proposé) :
-1. **Phase 2 recherche** : intégrer **Pagefind** (index build-time, zéro
-   backend) pour une recherche GLOBALE, UI overlay déclenchée depuis la Nav.
-   ⚠️ Ajoute une dépendance + modifie `astro.config.mjs`, et ne marche
-   qu'après `npm run build` (PAS en `npm run dev`).
-2. Reverifier/fixer le `<title>` « Contre Galop ».
-3. Composant Newsletter (bloc navy plein écran en fin d'article).
-4. Page d'accueil finale (l'actuelle est une v1 assumée).
-5. **Quand prêt (go-live)** : enlever le `noindex` global, passer à
-   `index, follow` selon le champ `metaRobots` de Strapi → bascule officielle
-   + 301 globale `contre-galop.com` → `ponyscope.com`.
+🔜 Reste à faire — CHECKLIST GO-LIVE (maj juillet 2026)
+
+✅ Livré (session juillet 2026) :
+- **Vitrine des rubriques** (mosaïque bento) sur l'accueil.
+- **Horoscoponey** : rubrique horoscope parodique. Page `/horoscoponey`
+  (12 signes, illustrations `src/assets/signs/<slug>.png` optimisées, prédiction
+  du jour + jauges tirées CÔTÉ CLIENT par hash `date+signe` → vivant sans
+  backend). Encart single-signe injecté au milieu des articles
+  (`HoroscoponeyTeaser`, signe « résident » déterministe par article, inséré
+  entre 2 paragraphes via `injectAfterIndex` de `BlocksRenderer`). Données dans
+  `src/data/horoscoponey.js` (60 prédictions — à scaler).
+- **Recherche globale Pagefind** (`astro-pagefind`) : overlay `SearchOverlay`
+  ouvert par la loupe Nav (`[data-open-search]`), UI classique thémée, lazy-load
+  à la 1re ouverture, `data-pagefind-ignore` sur nav/footer/teaser. ⚠️ Ne marche
+  qu'après `build` (prod/preview), PAS en `dev`.
+- **sitemap** (`@astrojs/sitemap`) + **robots.txt** (blocage pré-lancement, bloc
+  go-live prêt en commentaire dans le fichier).
+- **404**, **mentions légales** + **confidentialité** (RGPD) via `LegalLayout`.
+  Éditeur = Joseph Lambert (EI) ; adresse affichée = boîte pro **10 rue de
+  Penthièvre 75008** (JAMAIS le siège) ; contact **contact@ponyscope.com**.
+- **Nav mobile** : burger → panneau plein écran (rubriques + recherche).
+- Titres rebrandés (cf. « Déjà réglé »). Newsletter retirée de Nav+Footer
+  (pas de page `/newsletter` → évitait un 404).
+
+🔴 Bloquants restants (le geste de bascule, à faire en dernier le jour J) :
+1. **Lever le `noindex` global** : `BaseLayout.astro` + `[...path].astro`
+   (passer au champ `metaRobots` Strapi, sauf catégorie cachée) ET basculer
+   `public/robots.txt` sur `Allow` + ligne `Sitemap` (déjà prêt en commentaire).
+2. **301 globale** `contre-galop.com` → `ponyscope.com` (côté ancien site).
+
+🟡 Confort (peut suivre le lancement) :
+- Home : réchauffer le hero + ajouter « La Une » (accueil = v1 assumée).
+- Composant **Newsletter** → puis réintroduire le CTA « S'abonner » (Nav/Footer).
+
+⚪ Post-lancement :
+- Horoscoponey : 12 pages signes `/horoscoponey/[signe]`, section accueil,
+  scale des prédictions (60 → 300/1000), illustrations définitives validées.
+- Vraies pubs dans les `AdSlot`.
 
 ℹ️ **Migration WP→Strapi complète** : 585 articles WP = 585 articles
 Strapi, 0 manquant (vérifié par comparaison des slugs). L'API publique du
