@@ -1,0 +1,124 @@
+---
+// src/layouts/LegalLayout.astro
+// Gabarit commun aux pages légales (mentions légales, confidentialité, CGV…).
+// Colonne de lecture centrée, typographie sobre cohérente avec le design system.
+
+import BaseLayout from './BaseLayout.astro';
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+
+export interface Props {
+  title: string;
+  description?: string;
+  updated?: string; // ex: "juillet 2026"
+}
+const { title, description = '', updated } = Astro.props;
+---
+
+<BaseLayout title={`${title} — Ponyscope`} description={description} noindex={true}>
+  <Nav slot="nav" />
+
+  <article class="legal">
+    <header class="legal-head">
+      <span class="legal-eyebrow">Informations légales</span>
+      <h1 class="legal-title">{title}</h1>
+      {updated && <p class="legal-updated">Dernière mise à jour : {updated}</p>}
+    </header>
+
+    <div class="legal-body">
+      <slot />
+    </div>
+  </article>
+
+  <Footer slot="footer" />
+</BaseLayout>
+
+<style>
+  .legal {
+    background: var(--ivory);
+    padding: 80px 24px 110px;
+  }
+  .legal-head {
+    max-width: 760px;
+    margin: 0 auto 48px;
+    text-align: center;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 40px;
+  }
+  .legal-eyebrow {
+    display: block;
+    font-family: var(--font-sans);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.32em;
+    color: var(--gold-deep);
+    font-weight: 600;
+    margin-bottom: 18px;
+  }
+  .legal-title {
+    font-family: var(--font-serif);
+    font-weight: 400;
+    font-size: clamp(34px, 5vw, 52px);
+    line-height: 1.1;
+    color: var(--navy);
+    margin: 0;
+    letter-spacing: -0.018em;
+  }
+  .legal-updated {
+    font-family: var(--font-sans);
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    color: var(--ink-soft);
+    margin: 18px 0 0;
+  }
+
+  .legal-body {
+    max-width: 720px;
+    margin: 0 auto;
+  }
+  .legal-body :global(h2) {
+    font-family: var(--font-serif);
+    font-weight: 500;
+    font-size: 26px;
+    line-height: 1.2;
+    color: var(--navy);
+    letter-spacing: -0.012em;
+    margin: 52px 0 18px;
+  }
+  .legal-body :global(h2:first-child) { margin-top: 0; }
+  .legal-body :global(h3) {
+    font-family: var(--font-serif);
+    font-weight: 500;
+    font-size: 20px;
+    color: var(--navy);
+    margin: 32px 0 12px;
+  }
+  .legal-body :global(p),
+  .legal-body :global(li) {
+    font-family: var(--font-sans);
+    font-size: 16px;
+    line-height: 1.75;
+    color: var(--ink-mid);
+  }
+  .legal-body :global(p) { margin: 0 0 18px; }
+  .legal-body :global(ul) { margin: 0 0 18px 22px; }
+  .legal-body :global(li) { margin-bottom: 8px; }
+  .legal-body :global(strong) { color: var(--navy); font-weight: 600; }
+  .legal-body :global(a) {
+    color: var(--navy);
+    text-decoration: none;
+    border-bottom: 1px solid var(--gold);
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .legal-body :global(a:hover) { color: var(--gold-deep); border-bottom-color: var(--gold-deep); }
+  .legal-body :global(.legal-note) {
+    font-size: 14px;
+    color: var(--ink-soft);
+    font-style: italic;
+  }
+
+  @media (max-width: 640px) {
+    .legal { padding: 60px 18px 80px; }
+    .legal-head { margin-bottom: 36px; padding-bottom: 32px; }
+  }
+</style>

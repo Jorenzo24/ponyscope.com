@@ -1,0 +1,132 @@
+---
+// src/pages/404.astro
+// Page d'erreur 404 — Cloudflare Pages sert automatiquement /404.html pour
+// tout chemin introuvable. Ton éditorial dans l'esprit du site, sortie de
+// secours vers l'accueil et les rubriques.
+
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+import OrnamentDivider from '../components/OrnamentDivider.astro';
+
+const RUBRIQUES = [
+  { path: '/blog', label: 'Le Blog' },
+  { path: '/tops', label: 'Tops' },
+  { path: '/tutos', label: 'Tutos' },
+  { path: '/guides-galops', label: 'Guides Galops' },
+  { path: '/metiers', label: 'Métiers' },
+  { path: '/ethologie', label: 'Éthologie' },
+];
+---
+
+<BaseLayout
+  title="Page introuvable — Ponyscope"
+  description="Cette page s'est échappée du pré."
+  noindex={true}
+>
+  <Nav slot="nav" />
+
+  <section class="nf">
+    <span class="nf-code">404</span>
+    <h1 class="nf-title">Cette page s’est échappée du pré</h1>
+    <OrnamentDivider symbol="✦" width="64px" variant="gold-soft" marginY="0" />
+    <p class="nf-text">
+      Impossible de remettre la main dessus — elle a dû filer au galop.
+      Reprends les rênes depuis l’accueil, ou choisis une rubrique.
+    </p>
+
+    <a class="nf-home" href="/">Retour à l’accueil ↗</a>
+
+    <nav class="nf-rubriques" aria-label="Rubriques">
+      {RUBRIQUES.map((r) => (
+        <a class="nf-chip" href={r.path}>{r.label}</a>
+      ))}
+    </nav>
+  </section>
+
+  <Footer slot="footer" />
+</BaseLayout>
+
+<style>
+  .nf {
+    background: var(--ivory);
+    min-height: 68vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 110px 24px 120px;
+    gap: 26px;
+  }
+  .nf-code {
+    font-family: var(--font-serif);
+    font-size: clamp(72px, 14vw, 150px);
+    line-height: 0.9;
+    color: var(--gold-soft);
+    letter-spacing: -0.02em;
+  }
+  .nf-title {
+    font-family: var(--font-serif);
+    font-weight: 400;
+    font-size: clamp(30px, 4.4vw, 52px);
+    line-height: 1.12;
+    color: var(--navy);
+    margin: 0;
+    letter-spacing: -0.018em;
+    max-width: 16ch;
+  }
+  .nf-text {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: clamp(17px, 2vw, 20px);
+    line-height: 1.55;
+    color: var(--ink-mid);
+    max-width: 46ch;
+    margin: 0;
+  }
+  .nf-home {
+    font-family: var(--font-sans);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.28em;
+    color: var(--navy);
+    text-decoration: none;
+    border-bottom: 1px solid var(--gold);
+    padding: 8px 0;
+    font-weight: 500;
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .nf-home:hover { color: var(--gold-deep); border-bottom-color: var(--gold-deep); }
+
+  .nf-rubriques {
+    margin-top: 14px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    max-width: 620px;
+  }
+  .nf-chip {
+    font-family: var(--font-sans);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-weight: 500;
+    color: var(--ink-mid);
+    text-decoration: none;
+    padding: 8px 16px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--paper);
+    transition: color 0.2s, border-color 0.2s, background 0.2s;
+  }
+  .nf-chip:hover {
+    color: var(--navy);
+    border-color: var(--gold-soft);
+  }
+
+  @media (max-width: 640px) {
+    .nf { padding: 80px 18px 90px; min-height: 60vh; }
+  }
+</style>
