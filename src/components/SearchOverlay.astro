@@ -1,0 +1,176 @@
+---
+// src/components/SearchOverlay.astro
+// Overlay de recherche globale (Pagefind). Rendu une fois par page via
+// BaseLayout, masqué par défaut, ouvert par tout élément [data-open-search]
+// (la loupe de la Nav). Fermé par la croix, le fond, ou Échap.
+//
+// On pilote le PagefindUI "classique" (généré dans /pagefind/ au build par
+// l'intégration astro-pagefind) plutôt que le composant du package, pour
+// maîtriser le thème et les traductions FR. L'UI (css+js) est chargée en
+// LAZY à la première ouverture — zéro poids ajouté aux pages tant qu'on ne
+// cherche pas.
+//
+// ⚠️ Pagefind indexe le HTML au BUILD → la recherche ne renvoie de résultats
+// qu'après `npm run build` (prod / preview), pas en `npm run dev`.
+---
+
+<div id="ps-search-overlay" class="pso" hidden data-pagefind-ignore>
+  <div class="pso-backdrop" data-close-search></div>
+  <div class="pso-panel" role="dialog" aria-modal="true" aria-label="Recherche">
+    <button class="pso-close" data-close-search aria-label="Fermer la recherche">✕</button>
+    <span class="pso-title">Rechercher sur Ponyscope</span>
+    <div id="ps-pagefind-ui" class="pso-pagefind"></div>
+  </div>
+</div>
+
+<script>
+  const overlay = document.getElementById('ps-search-overlay');
+  let loaded = false;
+
+  // Charge PagefindUI (css + js) une seule fois, puis instancie l'UI.
+  function loadPagefind() {
+    if (loaded) return;
+    loaded = true;
+
+    const css = document.createElement('link');
+    css.rel = 'stylesheet';
+    css.href = '/pagefind/pagefind-ui.css';
+    document.head.appendChild(css);
+
+    const js = document.createElement('script');
+    js.src = '/pagefind/pagefind-ui.js';
+    js.onload = () => {
+      // @ts-ignore — PagefindUI est exposé en global par le script chargé.
+      new PagefindUI({
+        element: '#ps-pagefind-ui',
+        showImages: false,
+        showSubResults: true,
+        translations: {
+          placeholder: 'Un article, un sujet, un cheval…',
+          clear_search: 'Effacer',
+          load_more: 'Voir plus de résultats',
+          search_label: 'Rechercher sur Ponyscope',
+          zero_results: 'Aucun résultat pour [SEARCH_TERM]',
+          many_results: '[COUNT] résultats pour [SEARCH_TERM]',
+          one_result: '[COUNT] résultat pour [SEARCH_TERM]',
+          searching: 'Recherche de [SEARCH_TERM]…',
+        },
+      });
+      focusInput();
+    };
+    document.head.appendChild(js);
+  }
+
+  function focusInput() {
+    const input = overlay?.querySelector('input');
+    if (input) setTimeout(() => input.focus(), 60);
+  }
+
+  function openSearch() {
+    if (!overlay) return;
+    overlay.hidden = false;
+    document.body.style.overflow = 'hidden';
+    loadPagefind();
+    focusInput();
+  }
+  function closeSearch() {
+    if (!overlay) return;
+    overlay.hidden = true;
+    document.body.style.overflow = '';
+  }
+
+  document.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement;
+    if (target.closest('[data-open-search]')) {
+      e.preventDefault();
+      openSearch();
+    } else if (target.closest('[data-close-search]')) {
+      closeSearch();
+    }
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && overlay && !overlay.hidden) closeSearch();
+  });
+</script>
+
+<style>
+  .pso {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 10vh 20px 20px;
+  }
+  .pso[hidden] { display: none; }
+
+  .pso-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(10, 12, 28, 0.72);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+  }
+
+  .pso-panel {
+    position: relative;
+    z-index: 1;
+    width: min(680px, 100%);
+    max-height: 80vh;
+    overflow-y: auto;
+    background: var(--paper);
+    border-radius: 8px;
+    padding: 30px 30px 26px;
+    box-shadow: 0 40px 100px -30px rgba(0, 0, 0, 0.6);
+    animation: pso-in 0.22s ease-out;
+  }
+  @keyframes pso-in {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .pso-close {
+    position: absolute;
+    top: 16px;
+    right: 18px;
+    background: none;
+    border: none;
+    font-size: 18px;
+    line-height: 1;
+    color: var(--ink-soft);
+    cursor: pointer;
+    padding: 6px;
+    transition: color 0.2s;
+  }
+  .pso-close:hover { color: var(--navy); }
+
+  .pso-title {
+    display: block;
+    font-family: var(--font-sans);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.28em;
+    color: var(--gold-deep);
+    font-weight: 600;
+    margin-bottom: 18px;
+  }
+
+  /* Thème PagefindUI aux couleurs Ponyscope */
+  .pso-pagefind {
+    --pagefind-ui-scale: 0.95;
+    --pagefind-ui-primary: var(--navy);
+    --pagefind-ui-text: var(--navy);
+    --pagefind-ui-background: var(--paper);
+    --pagefind-ui-border: var(--line);
+    --pagefind-ui-tag: var(--ivory);
+    --pagefind-ui-border-width: 1px;
+    --pagefind-ui-border-radius: 6px;
+    --pagefind-ui-font: var(--font-sans);
+  }
+
+  @media (max-width: 640px) {
+    .pso { padding: 6vh 12px 12px; }
+    .pso-panel { padding: 24px 18px 20px; }
+  }
+</style>

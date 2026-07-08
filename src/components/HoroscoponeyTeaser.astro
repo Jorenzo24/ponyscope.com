@@ -37,7 +37,7 @@ const fallbackPred = PREDICTIONS[hashStr(`fallback::${sign.slug}`) % PREDICTIONS
 const img = signImage(sign.slug) as ImageMetadata | null;
 ---
 
-<aside class="horo-teaser" data-ht-sign={sign.slug} aria-label="Horoscoponey — l'horoscope des cavaliers">
+<aside class="horo-teaser" data-ht-sign={sign.slug} data-pagefind-ignore aria-label="Horoscoponey — l'horoscope des cavaliers">
   {img && (
     <div class="ht-photo">
       <Image src={img} alt={`Signe ${sign.name}`} widths={[160, 300]} sizes="146px" loading="lazy" />

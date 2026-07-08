@@ -4,6 +4,8 @@
 // Charge les fonts, définit le design system, place la progress bar,
 // et expose 3 slots : nav (par défaut), default (contenu), footer.
 
+import SearchOverlay from '../components/SearchOverlay.astro';
+
 export interface Props {
   title: string;
   description?: string;
@@ -106,6 +108,8 @@ const {
 <slot />
 
 <slot name="footer" />
+
+<SearchOverlay />
 
 <script>
   // Reading progress bar — suit le scroll de la page

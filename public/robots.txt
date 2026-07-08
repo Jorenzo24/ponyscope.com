@@ -1,0 +1,17 @@
+# Ponyscope — robots.txt
+#
+# ÉTAT : PRÉ-LANCEMENT. Le site ne doit pas être indexé tant qu'il n'est pas
+# lancé officiellement (voir aussi la meta noindex,nofollow sur chaque page).
+# On bloque donc tout crawl pour l'instant.
+User-agent: *
+Disallow: /
+
+# ─────────────────────────────────────────────────────────────────────────
+# AU GO-LIVE : remplacer tout le bloc ci-dessus par celui-ci (retirer aussi le
+# noindex global dans BaseLayout.astro et [...path].astro) :
+#
+# User-agent: *
+# Allow: /
+#
+# Sitemap: https://ponyscope.com/sitemap-index.xml
+# ─────────────────────────────────────────────────────────────────────────
