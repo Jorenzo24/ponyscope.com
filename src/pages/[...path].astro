@@ -74,7 +74,7 @@ const { kind } = Astro.props;
       <BaseLayout
         title={metaTitle}
         description={metaDescription}
-        noindex={true}
+        noindex={false}
       >
         <Nav slot="nav" />
         <CategoryView category={category} />
@@ -199,7 +199,7 @@ const { kind } = Astro.props;
         description={metaDescription}
         canonicalURL={canonical || undefined}
         ogImage={ogImage}
-        noindex={true /* global pendant le dev ; au go-live, remplacer par : isHidden || article.seo?.metaRobots === 'noindex' */}
+        noindex={isHidden /* go-live : on indexe tous les articles réels ; seule la catégorie cachée reste noindex (données metaRobots migrées peu fiables) */}
       >
         <Nav slot="nav" />
 
