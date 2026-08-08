@@ -67,7 +67,7 @@ communauté) + couches de monétisation.
 
 ---
 
-## 4. État actuel du projet (maj 2026-07-08)
+## 4. État actuel du projet (maj 2026-08-08 — SITE LANCÉ)
 
 ✅ Fait et fonctionnel :
 - Projet Astro 6 dans `~/Documents/SITES/GIT/ponyscope.com` (iCloud désactivé).
@@ -123,8 +123,10 @@ communauté) + couches de monétisation.
   blanc pur (bordures de cartes crème), ombres chaudes (brun léger, pas
   gris-navy), images revivifiées (saturate ↑ au lieu de désaturées), cartes en
   4:3. Pistes refusées : ajouter un brun cuir/châtaigne ; accent oxblood/ocre.
-- `noindex,nofollow` actif PARTOUT (forcé `true` dans `BaseLayout.astro` et
-  `[...path].astro`) — normal tant que non lancé.
+- 🚀 **SITE LANCÉ (août 2026).** Le `noindex` global a été levé : `BaseLayout`
+  émet désormais `index, follow` par défaut (et `noindex, nofollow` uniquement
+  sur 404, pages légales et catégorie cachée via `isHidden`). `robots.txt` est
+  passé en `Allow: /` + `Sitemap:`. Le site est indexable.
 
 🐛 Bugs connus / à vérifier (non bloquants) :
 - `/blog` est un fourre-tout (~373 articles → 373 cartes dans le HTML de la
@@ -173,11 +175,21 @@ communauté) + couches de monétisation.
 - Titres rebrandés (cf. « Déjà réglé »). Newsletter retirée de Nav+Footer
   (pas de page `/newsletter` → évitait un 404).
 
-🔴 Bloquants restants (le geste de bascule, à faire en dernier le jour J) :
-1. **Lever le `noindex` global** : `BaseLayout.astro` + `[...path].astro`
-   (passer au champ `metaRobots` Strapi, sauf catégorie cachée) ET basculer
-   `public/robots.txt` sur `Allow` + ligne `Sitemap` (déjà prêt en commentaire).
-2. **301 globale** `contre-galop.com` → `ponyscope.com` (côté ancien site).
+✅ BASCULE FAITE (août 2026) :
+- **`noindex` levé** + `robots.txt` en `Allow` + `Sitemap` (cf. plus haut).
+- **301 `contre-galop.com` → `ponyscope.com`** posée via une **Page Rule
+  Cloudflare** (`contre-galop.com/*` → `https://ponyscope.com/$1`, 301), PAS
+  via `.htaccess` : sur l'ancien site, WordPress + un cache d'hébergement
+  interceptaient avant `.htaccess`. La Page Rule agit à l'edge, avant l'origine
+  → imparable. Chemin préservé (vérifié au `curl -sIL`). `www.contre-galop.com`
+  n'existe pas (pas de DNS) → rien à rediriger. **Ne PAS couper l'ancien
+  serveur** : il tourne en pur redirecteur plusieurs mois.
+- **Blocage des bots IA retiré** côté Cloudflare `ponyscope.com` (Joseph a
+  ouvert GPTBot/ClaudeBot/etc. pour la visibilité dans les réponses IA).
+
+⏳ Reste côté Joseph (hors code) : **Google Search Console** → vérifier
+`ponyscope.com`, soumettre `https://ponyscope.com/sitemap-index.xml`, puis
+**Change of address** `contre-galop.com` → `ponyscope.com`.
 
 🟡 Confort (peut suivre le lancement) :
 - Home : réchauffer le hero + ajouter « La Une » (accueil = v1 assumée).
